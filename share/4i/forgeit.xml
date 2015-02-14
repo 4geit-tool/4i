@@ -1,18 +1,10 @@
 <?xml version="1.0"?>
 
 <forgeit>
-  <registry name="core"
-	    local_base_uri="file:///Dev/4geit/4geit-core"
-	    remote_base_uri="http://github.com/4geit-core"/>
-  <registry name="module"
-	    local_base_uri="file:///Dev/4geit/4geit-module"
-	    remote_base_uri="http://github.com/4geit-module"/>
-  <registry name="extension"
-	    local_base_uri="file:///Dev/4geit/4geit-extension"
-	    remote_base_uri="http://github.com/4geit-extension"/>
-  <registry name="project"
-	    local_base_uri="file:///Dev/4geit/4geit-project"
-	    remote_base_uri="http://github.com/4geit-project"/>
+  <resource name="core" registry_uri="http://github.com/4geit-core"/>
+  <resource name="module" registry_uri="http://github.com/4geit-module"/>
+  <resource name="extension" registry_uri="http://github.com/4geit-extension"/>
+  <resource name="project" registry_uri="http://github.com/4geit-project"/>
 
   <core name="reference" required_version="0.1.0"/>
   <core name="inclusion" required_version="0.1.0"/>

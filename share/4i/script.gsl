@@ -9,8 +9,8 @@ endfunction
 
 function set_variables
   global.logcnt = "4i"
-  global.local = env.get("FORGEIT_LOCAL") ? 1
-  global.storage_path = directory.resolve(env.get("FORGEIT_STORAGE_PATH") ? "$(env.get("HOME"):)/.4geit")
+  global.debug = env.get("FORGEIT_DEBUG") ? 0
+  global.resource_prefix = directory.resolve(env.get("FORGEIT_RESOURCE_PREFIX") ? "$(env.get("HOME"):)/.4geit")
   global.forgeit_path = directory.resolve("$(env.get('FORGEIT_PREFIX'):)/share/4i")
   global.project_path = directory.resolve('.')
   global.project_name = project.name?""
@@ -19,12 +19,16 @@ function set_variables
 endfunction
 
 function print_variables
-  log("storage_path: [$(global.storage_path:)]")
-  log("forgeit_path: [$(global.forgeit_path:)]")
-  log("project_path: [$(global.project_path:)]")
-  log("project_name: [$(global.project_name:)]")
-  log("build_path: [$(global.build_path:)]")
-  log("cache_path: [$(global.cache_path:)]")
+  log("---")
+  log("$("project_name"%15s): [$(global.project_name:)]")
+  log("$("debug"%15s): [$(global.debug:)]")
+  log("$("resource_prefix"%15s): [$(global.resource_prefix:)]")
+  log("$("forgeit_path"%15s): [$(global.forgeit_path:)]")
+  log("$("project_path"%15s): [$(global.project_path:)]")
+  log("$("project_name"%15s): [$(global.project_name:)]")
+  log("$("build_path"%15s): [$(global.build_path:)]")
+  log("$("cache_path"%15s): [$(global.cache_path:)]")
+  log("---")
 endfunction
 
 configure()
@@ -36,13 +40,17 @@ test_project()
 print_variables()
 load_config()
 copy_dependencies()
-create_registry_handlers_directories()
+create_resource_directories()
 get_copy_load_nested_dependencies()
+log("---")
 load_core_dependencies()
+log("---")
 log('core dependencies ready')
 inclusion__process()
+log("---")
 load_pre_file()
 load_module_dependencies()
+log("---")
 create_assets()
 load_post_file()
 
