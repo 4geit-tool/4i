@@ -14,7 +14,58 @@
   <core name="conditional" required_version="0.1.0"/>
   <core name="cache" required_version="0.1.0"/>
   <core name="list" required_version="0.1.0"/>
-  <core name="module" required_version="0.1.0"/>
+  <!-- <core name="module" required_version="0.1.0"/> -->
   <core name="protocol" required_version="0.1.0"/>
   <!-- <module name="toto" required_version="0.1.0"/> -->
+
+  <protocol>
+    <node name="project">
+      <attribute name="name" required="True"/>
+      <attribute name="vendor"/>
+      <attribute name="vendor_email"/>
+      <attribute name="version"/>
+      <attribute name="license"/>
+      <attribute name="description"/>
+      <node name="author" number="*">
+	<attribute name="name" required="True"/>
+	<attribute name="email"/>
+      </node>
+      <node name="keyword" number="*">
+	<attribute name="value" required="True"/>
+      </node>
+      <group id="requires">
+	<node name="require" number="*">
+	  <node name="env"/>
+	  <node name="dev"/>
+	  <node name="name" required="True"/>
+	  <node name="version"/>
+	  <node name="variable"/>
+	</node> <!-- !require -->
+      </group>
+      <node name="module" number="*">
+	<node name="name" required="True"/>
+	<node name="version"/>
+	<group ref="requires"/>
+      </node> <!-- !module -->
+      <node name="extension" number="*">
+	<node name="name" required="True"/>
+	<node name="required_version"/>
+      </node> <!-- !extension -->
+      <group id="files">
+	<node name="file" number="*">
+	  <attribute name="name" required="True"/>
+	  <node name="image" number="*">
+	    <attribute name="name" required="True"/>
+	    <attribute name="resize"/>
+	  </node> <!-- !image -->
+	</node> <!-- !file -->
+      </group> <!-- !files -->
+      <group id="dirs">
+	<node name="dir" number="*">
+	  <group ref="files"/>
+	  <group ref="dirs"/>
+	</node> <!-- !dir -->
+      </group> <!-- !dirs -->
+    </node>
+  </protocol>
 </forgeit>

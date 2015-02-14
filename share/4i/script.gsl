@@ -15,7 +15,7 @@ function set_variables
   global.project_path = directory.resolve('.')
   global.project_name = project.name?""
   global.build_path = directory.resolve("$(global.project_path:)build/$(project_name:)")
-  global.cache_path = directory.resolve("$(global.build_path:).cache/$(project_name:)")
+  global.cache_path = directory.resolve("$(global.project_path:)build/.cache/$(project_name:)")
 endfunction
 
 function print_variables
@@ -41,14 +41,15 @@ print_variables()
 load_config()
 copy_dependencies()
 create_resource_directories()
+create_project_directories()
 get_copy_load_nested_dependencies()
 log("---")
 load_core_dependencies()
 log("---")
-log('core dependencies ready')
 inclusion__process()
 log("---")
 load_pre_file()
+check_protocol()
 load_module_dependencies()
 log("---")
 create_assets()

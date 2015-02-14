@@ -26,7 +26,7 @@ deactivate
 popd
 .
 .cache_close(cached)
-.chmod('+x', '$(m.name)_command.sh')
+.chmod('+x', '$(global.build_path:)/$(m.name)_command.sh')
 .
 .endfor
 .endtemplate

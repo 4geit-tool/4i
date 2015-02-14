@@ -64,6 +64,12 @@ function create_resource_directories
   endfor
 endfunction
 
+# create project directories
+function create_project_directories
+  directory.create(global.build_path)
+  directory.create(global.cache_path)
+endfunction
+
 function get_resource_path(item)
   return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_v$(my.item.required_version)"
 endfunction
@@ -162,12 +168,19 @@ function load_core_dependencies
   endfor
 endfunction
 
-# load module dependencies
-function load_module_dependencies
-  for project.module as m
-    log("Loading $(m.name:) module (v$(m.version))")
-    protocol__check(m)
-    # gsl from "$(get_resource_path(c):)/$(c.name:).gsl"
+# check protocol
+function check_protocol
+  if global.debug
+    log('check global protocol')
+  endif
+  protocol__check(root->forgeit)
+  for root->forgeit.resource as ri
+    for project.$(ri.name) as i
+      if global.debug
+        log('check $(i.name:) $(ri.name:) protocol')
+      endif
+      protocol__check(i)
+    endfor
   endfor
 endfunction
 
@@ -175,6 +188,25 @@ function load_file(fn)
   if file.exists(my.fn)
     gsl from my.fn
   endif
+endfunction
+
+# load module dependencies
+function load_module_dependencies
+  for project.module as m
+    global.logcnt = m.name
+    log("Loading $(m.name:) module (v$(m.version))")
+    global.cm_build_path = "$(global.build_path:)$(m.name:)"
+    global.cm_cache_path = "$(global.cache_path:)$(m.name:)"
+    log("---")
+    log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
+    log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
+    log("---")
+    directory.setcwd(get_resource_path(m))
+    load_file("utils.gsl")
+    # gsl from "$(get_resource_path(c):)/$(c.name:).gsl"
+    directory.setcwd(global.project_path)
+    global.logcnt = "4i"
+  endfor
 endfunction
 
 function load_pre_file

@@ -36,6 +36,6 @@ deactivate
 popd
 .
 .cache_close(cached)
-.chmod('+x', 'bootstrap.sh')
+.chmod('+x', '$(global.build_path:)/bootstrap.sh')
 .
 .endtemplate
