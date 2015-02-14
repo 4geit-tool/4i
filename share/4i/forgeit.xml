@@ -18,6 +18,15 @@
   <core name="protocol" required_version="0.1.0"/>
   <!-- <module name="toto" required_version="0.1.0"/> -->
 
+  <todo>pull modules and extensions</todo>
+  <todo>push modules and extensions</todo>
+  <todo>connect to a registry</todo>
+  <todo>create project</todo>
+  <todo>push/pull project</todo>
+  <todo>deploy project</todo>
+  <todo>create core library</todo>
+  <todo>push/pull core library</todo>
+  
   <protocol>
     <node name="project">
       <attribute name="name" required="True"/>
