@@ -1,0 +1,31 @@
+.template 1
+.
+.macro add_requirements(ctx)
+. my.ctx ?= project
+.
+. for my.ctx.require as r where !defined(r.env) | (defined(r.env) & r.env = 'pip')
+.   log('require package "$(r.name)"' + conditional__ifdef_else_empty(r.version, ', version "$(r.operator?">=")$(r.version)"'))
+.
+$(r.name)\
+$(conditional__ifdef_else_empty(r.version, '$(r.operator?">=")$(r.version)'))
+.
+. endfor
+.endmacro
+.
+.if defined(project.python_version)
+.
+. log('create "$(m.name)" requirements.txt')
+. cached = cache_open("requirements.txt")
+.
+. for project.extension as e
+.   add_requirements(e)
+. endfor
+.
+. add_requirements(module)
+. add_requirements()
+.
+. cache_close(cached)
+.
+.endif
+.
+.endtemplate

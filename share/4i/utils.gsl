@@ -1,0 +1,205 @@
+.template 0
+
+function log(msg, ctx)
+  if defined(my.ctx)
+    echo "[$(global.logcnt:)][$(my.ctx:)] $(my.msg:)"
+  else
+    echo "[$(global.logcnt:)] $(my.msg:)"
+  endif
+endfunction
+
+function error(msg, ctx)
+  if defined(my.ctx)
+    abort "[$(global.logcnt:)][$(my.ctx:)] Error: $(my.msg:)"
+  else
+    abort "[$(global.logcnt:)] Error: $(my.msg:)"
+  endif
+endfunction
+
+# exec a command and redirects the output as a function return value
+function exec(cmd)
+  my.outname = "/tmp/gslcmd_$(string.hash(my.cmd)).out"
+  my.errname = "/tmp/gslcmd_$(string.hash(my.cmd)).err"
+  my.p = proc.new(my.cmd, '.', '/dev/stdin', my.outname, my.errname)
+  my.p.run()
+  my.res = XML.new()
+  define my.res.out = file.slurp(my.outname) ? ""
+  define my.res.err = file.slurp(my.errname) ? ""
+  file.delete(my.outname)
+  file.delete(my.errname)
+  return my.res
+endfunction
+
+# test if project node exists
+function test_project
+  if !defined(root->project)
+    error("No project node found")
+  endif
+  if !defined(project.name)
+    error("No attribute name found")
+  endif
+  log("Project $(project.name:)")
+endfunction
+
+function load_config
+  xml to root from "$(global.forgeit_path:)/forgeit.xml"
+endfunction
+
+# copy dependencies to project
+function copy_dependencies
+  for root->forgeit.registry as r
+    for root->forgeit.$(r.name) as i
+      copy i to project
+    endfor
+  endfor
+endfunction
+
+# is local ?
+function is_local
+  return defined(global.local) & global.local = 1
+endfunction
+
+# get base uri
+function get_base_uri(registry)
+  return is_local() ?? my.registry.local_base_uri ? my.registry.remote_base_uri
+endfunction
+
+# create registry handlers
+function create_registry_handlers_directories
+  for root->forgeit.registry as r
+    # log("process $(r.name:)")
+    if is_local()
+      directory.create("$(global.storage_path:)/$(r.name:)")
+    endif
+  endfor
+endfunction
+
+function get_handler_path(item)
+  return "$(global.storage_path:)/$(name(my.item):)/$(my.item.name:)_v$(my.item.required_version)"
+endfunction
+
+# get registry handlers
+function get_registry_handlers
+  for root->forgeit.registry as r
+    for project.$(r.name) as i
+      my.uri = "$(get_base_uri(r):)/$(i.name:)"
+      my.dst = get_handler_path(i)
+      if !file.exists(my.dst)
+        my.cmd = "git clone --depth 1 -b v$(i.required_version) $(my.uri:) $(my.dst:)"
+        # log(my.cmd)
+        log("Retrieving $(i.name:) $(r.name:) (v$(i.required_version))")
+        my.res = exec(my.cmd)
+        if defined(string.locate(my.res.err, 'fatal'))
+          # log(my.res.err)
+          error("A fatal error occured while retrieving $(i.name:) $(r.name:).")
+        endif
+      endif
+    endfor
+  endfor
+endfunction
+
+# merge two nodes into the first one
+function merge_two_nodes(node1, node2)
+  for my.node2. as item
+    copy item to my.node1
+  endfor
+endfunction
+
+function compare_version(i1, i2)
+  return my.i1.required_version = my.i2.version
+endfunction
+
+# load xml dependencies to project
+function load_xml_dependencies
+  for root->forgeit.registry as r
+    for project.$(r.name) as i where !defined(i.version)
+      my.xml_filename = "$(get_handler_path(i):)/$(i.name:).xml"
+      # log(my.xml_filename)
+      if file.exists(my.xml_filename)
+        my.tmp = XML.new()
+        xml to my.tmp from my.xml_filename
+        if !compare_version(i, my.tmp->$(r.name:))
+          error("$(r.name:) $(i.name:) is an inconsitent version ($(i.required_version) <> $(my.tmp->$(r.name:).version))")
+        else
+          i.version = my.tmp->$(r.name:).version
+        endif
+        merge_two_nodes(i, my.tmp->$(r.name:))
+      endif
+    endfor    
+  endfor
+endfunction
+
+# copy dependencies to project
+function copy_nested_dependencies
+  for root->forgeit.registry as ri
+    for project.$(ri.name) as i
+      for root->forgeit.registry as rj
+        for i.$(rj.name) as j where !defined(project->$(rj.name)(name=j.name))
+          copy j to project
+        endfor
+      endfor
+    endfor
+  endfor
+endfunction
+
+# get, copy and load nested dependencies
+function get_copy_load_nested_dependencies
+  my.found = 0
+  while !my.found
+    my.found = 1
+    for root->forgeit.registry as ri
+      for project.$(ri.name) as i where !defined(i.version)
+        get_registry_handlers()
+        copy_nested_dependencies()
+        load_xml_dependencies()
+        my.found = 0
+      endfor
+    endfor
+  endwhile
+endfunction
+
+# load core dependencies
+function load_core_dependencies
+  for project.core as c
+    log("Loading $(c.name:) core (v$(c.version))")
+    gsl from "$(get_handler_path(c):)/$(c.name:).gsl"
+  endfor
+endfunction
+
+# load module dependencies
+function load_module_dependencies
+  for project.module as m
+    log("Loading $(m.name:) module (v$(m.version))")
+    # gsl from "$(get_handler_path(c):)/$(c.name:).gsl"
+  endfor
+endfunction
+
+function load_file(fn)
+  if file.exists(my.fn)
+    gsl from my.fn
+  endif
+endfunction
+
+function load_pre_file
+  load_file('$(global.project_path:)/pre.gsl')
+endfunction
+
+function load_post_file
+  load_file('$(global.project_path:)/post.gsl')
+endfunction
+
+function create_assets()
+  # bootstrap.sh
+  gsl from "$(global.forgeit_path:)/assets/bootstrap__sh.gsl"
+
+  # run.sh
+  gsl from "$(global.forgeit_path:)/assets/run__sh.gsl"
+
+  # command.sh
+  gsl from "$(global.forgeit_path:)/assets/command__sh.gsl"
+
+  # copy files
+  file__copy_files(project, '', global.build_path)
+endfunction
+
+.endtemplate

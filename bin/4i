@@ -1,0 +1,7 @@
+#!/bin/sh
+
+PREFIX=${0%/*}
+PREFIX=${PREFIX%/*}
+export FORGEIT_PREFIX=$PREFIX
+
+gsl -a -script:${PREFIX}/share/4i/script.gsl $*

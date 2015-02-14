@@ -1,0 +1,97 @@
+.template 1
+.
+.macro add_requirements(ctx, type)
+. my.ctx ?= project
+.
+. for my.ctx.require as r where defined(r.env) & r.env = 'npm' & ((!defined(r.type) & !defined(my.type)) | (defined(my.type) & defined(r.type) & r.type = my.type))
+.   log('require package "$(r.name)"' + conditional__ifdef_else_empty(r.version, ', version "$(r.version)"'))
+.
+    "$(r.name)": "$(conditional__ifdef_else_empty(r.version, '$(r.version)'))"\
+.
+.   if !last(r)
+,\
+.   endif
+
+. endfor
+.endmacro
+.
+.if defined(project.node_version)
+.
+. log('create "$(m.name)" package.json')
+. cached = cache_open("package.json")
+.
+{
+  "name": "$(project.name)",
+  "version": "$(project.version?"0.1.0")",
+  "private": false,
+  "description": "$(project.description?"")",
+  "main": "bin/$(project.name)",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha --growl test/fast test/fast/block test/medium",
+    "start": "bin/$(project.name)"
+  },
+.
+. if defined(project.git)
+  "repository": {
+    "type": "git",
+    "url": "$(project.git:)"
+  },
+. endif
+.
+  "keywords": [
+. for project.keyword as k
+    "$(k.value:)"\
+.
+.   if !last(k)
+,\
+.   endif
+
+. endfor
+  ],
+.
+. for project.author as a
+  "author": "$(a.name:) <$(a.email:)>",
+. endfor
+.
+  "license": "$(project.license:)",
+  "readmeFilename": "readme.md",
+.
+. if defined(project.bugs)
+  "bugs": {
+    "url": "https://github.com/c-geek/ucoin/issues"
+  },
+. endif
+.
+  "dependencies": {
+.
+. for project.extension as e
+.   add_requirements(e)
+. endfor
+.
+. add_requirements(module)
+. add_requirements()
+.
+  },
+  "devDependencies": {
+.
+. for project.extension as e
+.   add_requirements(e, 'dev')
+. endfor
+.
+. add_requirements(module, 'dev')
+. add_requirements(project, 'dev')
+.
+  },
+  "bin": {
+    "$(project.name)": "./bin/$(project.name)"
+  }
+}
+.
+. cache_close(cached)
+.
+.endif
+.
+.endtemplate

@@ -1,0 +1,36 @@
+.template 1
+.log('create "$(m.name)" bootstrap.sh')
+.cached = cache_open("bootstrap.sh")
+.
+#!/bin/bash
+
+.copyleft()
+
+.if defined(project.python_version)
+virtualenv$(project.python_version) .
+source bin/activate
+.endif
+
+pushd $(projectdir:)
+
+.if defined(project.python_version)
+pip install --upgrade pip
+pip install --allow-all-external -r requirements.txt
+.endif
+.
+.if defined(project.node_version)
+npm install
+.endif
+.
+\./build.sh
+
+.if defined(project.python_version)
+deactivate
+.endif
+
+popd
+.
+.cache_close(cached)
+.chmod('+x', '$(projectdir:)/bootstrap.sh')
+.
+.endtemplate

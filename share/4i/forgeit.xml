@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<forgeit>
+  <registry name="core"
+	    local_base_uri="file:///Dev/4geit/4geit-core"
+	    remote_base_uri="http://github.com/4geit-core"/>
+  <registry name="module"
+	    local_base_uri="file:///Dev/4geit/4geit-module"
+	    remote_base_uri="http://github.com/4geit-module"/>
+  <registry name="extension"
+	    local_base_uri="file:///Dev/4geit/4geit-extension"
+	    remote_base_uri="http://github.com/4geit-extension"/>
+  <registry name="project"
+	    local_base_uri="file:///Dev/4geit/4geit-project"
+	    remote_base_uri="http://github.com/4geit-project"/>
+
+  <core name="reference" required_version="0.1.0"/>
+  <core name="inclusion" required_version="0.1.0"/>
+  <core name="string" required_version="0.1.0"/>
+  <core name="logger" required_version="0.1.0"/>
+  <core name="file" required_version="0.1.0"/>
+  <core name="conditional" required_version="0.1.0"/>
+  <core name="cache" required_version="0.1.0"/>
+  <core name="list" required_version="0.1.0"/>
+  <core name="module" required_version="0.1.0"/>
+  <core name="protocol" required_version="0.1.0"/>
+  <!-- <module name="toto" required_version="0.1.0"/> -->
+</forgeit>
