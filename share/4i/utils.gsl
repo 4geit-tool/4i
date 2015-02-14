@@ -127,7 +127,7 @@ function load_xml_dependencies
         endif
         merge_two_nodes(i, my.tmp->$(r.name:))
       endif
-    endfor    
+    endfor
   endfor
 endfunction
 
@@ -149,8 +149,8 @@ function get_copy_load_nested_dependencies
   my.found = 0
   while !my.found
     my.found = 1
-    for root->forgeit.resource as ri
-      for project.$(ri.name) as i where !defined(i.version)
+    for root->forgeit.resource as r
+      for project.$(r.name) as i where !defined(i.version)
         retrieve_resources()
         copy_nested_dependencies()
         load_xml_dependencies()
@@ -158,6 +158,28 @@ function get_copy_load_nested_dependencies
       endfor
     endfor
   endwhile
+endfunction
+
+# check compatibility
+function check_compatibility
+  for root->forgeit.resource as ri
+    for project.$(ri.name) as i where defined(i->compatible)
+      if global.debug
+        log('check compatibility for $(i.name:) $(ri.name:)')
+      endif
+      for i.compatible as c
+        for root->forgeit.resource as rj
+          for c.$(rj.name) as j
+            if !defined(project->$(rj.name)(name=j.name))
+              error('$(ri.name:) $(i.name) (v$(i.version)) requires $(rj.name:) $(j.name:) (v$(j.required_version)).')
+            elsif !defined(project->$(rj.name)(name=j.name & version=j.required_version))
+              error('compatibility issue beetween $(ri.name:) $(i.name) and $(rj.name:) $(j.name:).')
+            endif
+          endfor
+        endfor
+      endfor
+    endfor
+  endfor
 endfunction
 
 # load core dependencies
@@ -174,10 +196,10 @@ function check_protocol
     log('check global protocol')
   endif
   protocol__check(root->forgeit)
-  for root->forgeit.resource as ri
-    for project.$(ri.name) as i
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
       if global.debug
-        log('check $(i.name:) $(ri.name:) protocol')
+        log('check $(i.name:) $(r.name:) protocol')
       endif
       protocol__check(i)
     endfor
