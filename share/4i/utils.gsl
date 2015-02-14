@@ -30,6 +30,25 @@ function exec(cmd)
   return my.res
 endfunction
 
+function load_file(fn)
+  if global.debug
+    log('load_file "$(my.fn:)"')
+  endif
+  if file.exists(my.fn)
+    gsl from my.fn
+  endif
+endfunction
+
+# load xml
+function load_xml(fn)
+  if global.debug
+    log('load_xml "$(my.fn:)"')
+  endif
+  if file.exists(my.fn)
+    xml to root from my.fn
+  endif
+endfunction
+
 # test if project node exists
 function test_project
   if !defined(root->project)
@@ -186,7 +205,7 @@ endfunction
 function load_core_dependencies
   for project.core as c
     log("Loading $(c.name:) core (v$(c.version))")
-    gsl from "$(get_resource_path(c):)/$(c.name:).gsl"
+    load_file("$(get_resource_path(c):)/$(c.name:).gsl")
   endfor
 endfunction
 
@@ -206,10 +225,20 @@ function check_protocol
   endfor
 endfunction
 
-function load_file(fn)
-  if file.exists(my.fn)
-    gsl from my.fn
-  endif
+# load extension dependencies
+function load_extension_dependencies(resource, file)
+  for project.extension where (defined(extension->compatible) & defined(extension->compatible->$(name(my.resource))(name=my.resource.name & required_version=my.resource.version))) | !defined(extension->compatible)
+    if global.debug
+      log("Loading $(extension.name:) extension (v$(extension.version)) $(my.file:)")
+    endif
+    load_file("$(get_resource_path(extension):)/$(my.file:)")
+  endfor
+endfunction
+
+# create current module directories
+function create_cm_directories
+  directory.create(global.cm_build_path)
+  directory.create(global.cm_cache_path)
 endfunction
 
 # load module dependencies
@@ -225,7 +254,11 @@ function load_module_dependencies
     log("---")
     directory.setcwd(get_resource_path(m))
     load_file("utils.gsl")
-    # gsl from "$(get_resource_path(c):)/$(c.name:).gsl"
+    load_extension_dependencies(m, "pre.gsl")
+    load_xml("abstractor.xml")
+    create_cm_directories()
+    # load_file("$(get_resource_path(c):)/script.gsl")
+    load_extension_dependencies(m, "post.gsl") # DO FILES LOCATION GOOD ???
     directory.setcwd(global.project_path)
     global.logcnt = "4i"
   endfor
@@ -241,13 +274,13 @@ endfunction
 
 function create_assets()
   # bootstrap.sh
-  gsl from "$(global.forgeit_path:)/assets/bootstrap__sh.gsl"
+  load_file("$(global.forgeit_path:)/assets/bootstrap__sh.gsl")
 
   # run.sh
-  gsl from "$(global.forgeit_path:)/assets/run__sh.gsl"
+  load_file("$(global.forgeit_path:)/assets/run__sh.gsl")
 
   # command.sh
-  gsl from "$(global.forgeit_path:)/assets/command__sh.gsl"
+  load_file("$(global.forgeit_path:)/assets/command__sh.gsl")
 
   # copy files
   file__copy_files(project, '', global.build_path)
