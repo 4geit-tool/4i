@@ -243,22 +243,22 @@ endfunction
 
 # load module dependencies
 function load_module_dependencies
-  for project.module as m
-    global.logcnt = m.name
-    log("Loading $(m.name:) module (v$(m.version))")
-    global.cm_build_path = "$(global.build_path:)$(m.name:)"
-    global.cm_cache_path = "$(global.cache_path:)$(m.name:)"
+  for project.module
+    global.logcnt = module.name
+    log("Loading $(module.name:) module (v$(module.version))")
+    global.cm_build_path = "$(global.build_path:)$(module.name:)"
+    global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
     log("---")
     log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
     log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
     log("---")
-    directory.setcwd(get_resource_path(m))
+    directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
-    load_extension_dependencies(m, "pre.gsl")
+    load_extension_dependencies(module, "pre.gsl")
     load_xml("abstractor.xml")
     create_cm_directories()
-    # load_file("$(get_resource_path(c):)/script.gsl")
-    load_extension_dependencies(m, "post.gsl") # DO FILES LOCATION GOOD ???
+    load_file("$(get_resource_path(module):)/script.gsl")
+    load_extension_dependencies(module, "post.gsl") # DO FILES LOCATION GOOD ???
     directory.setcwd(global.project_path)
     global.logcnt = "4i"
   endfor

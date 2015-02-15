@@ -16,6 +16,7 @@
   <core name="list" required_version="0.1.0"/>
   <!-- <core name="module" required_version="0.1.0"/> -->
   <core name="protocol" required_version="0.1.0"/>
+  <core name="extension" required_version="0.1.0"/>
   <!-- <module name="toto" required_version="0.1.0"/> -->
 
   <todo>pull modules and extensions</todo>
@@ -35,6 +36,7 @@
       <attribute name="version"/>
       <attribute name="license"/>
       <attribute name="description"/>
+      <node name="todo" number="*"/>
       <node name="author" number="*">
 	<attribute name="name" required="True"/>
 	<attribute name="email"/>
@@ -44,21 +46,40 @@
       </node>
       <group id="requires">
 	<node name="require" number="*">
-	  <node name="env"/>
-	  <node name="dev"/>
-	  <node name="name" required="True"/>
-	  <node name="version"/>
-	  <node name="variable"/>
+	  <attribute name="env"/>
+	  <attribute name="dev"/>
+	  <attribute name="name" required="True"/>
+	  <attribute name="version"/>
+	  <attribute name="variable"/>
 	</node> <!-- !require -->
       </group>
+      <node name="core" number="*">
+	<attribute name="name" required="True"/>
+	<attribute name="required_version" required="True"/>
+	<attribute name="version" required="True"/>
+      </node> <!-- !core -->
       <node name="module" number="*">
-	<node name="name" required="True"/>
-	<node name="version"/>
+	<attribute name="name" required="True"/>
+	<attribute name="required_version" required="True"/>
+	<attribute name="version" required="True"/>
 	<group ref="requires"/>
+	<node name="protocol"/>
       </node> <!-- !module -->
       <node name="extension" number="*">
-	<node name="name" required="True"/>
-	<node name="required_version"/>
+	<attribute name="name" required="True"/>
+	<attribute name="required_version" required="True"/>
+	<attribute name="version" required="True"/>
+	<group ref="requires"/>
+	<node name="compatible">
+	  <node name="module" number="*">
+	    <attribute name="name" required="True"/>
+	    <attribute name="required_version" required="True"/>
+	  </node> <!-- !module -->
+	</node> <!-- !compatible -->
+	<node name="urls"/>
+	<node name="views"/>
+	<node name="build"/>
+	<node name="protocol"/>
       </node> <!-- !extension -->
       <group id="files">
 	<node name="file" number="*">
