@@ -1,5 +1,5 @@
 .template 1
-.log('create "$(m.name)" bootstrap.sh')
+.log('create "$(module.name)" bootstrap.sh')
 .cached = cache_open("bootstrap.sh")
 .
 #!/bin/bash
@@ -11,7 +11,7 @@ virtualenv$(project.python_version) .
 source bin/activate
 .endif
 
-pushd $(projectdir:)
+pushd $(global.cm_build_path:)
 
 .if defined(project.python_version)
 pip install --upgrade pip
@@ -31,6 +31,6 @@ deactivate
 popd
 .
 .cache_close(cached)
-.chmod('+x', '$(projectdir:)/bootstrap.sh')
+.chmod('+x', '$(global.cm_build_path:)/bootstrap.sh')
 .
 .endtemplate

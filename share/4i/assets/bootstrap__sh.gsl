@@ -1,5 +1,5 @@
 .template 1
-.cached = cache_open("bootstrap.sh")
+.cached = cache_open("bootstrap.sh", "", global.build_path, global.cache_path)
 #!/bin/bash
 
 .copyleft()
@@ -35,7 +35,7 @@ deactivate
 
 popd
 .
-.cache_close(cached)
+.cache_close(cached, global.build_path, global.cache_path)
 .chmod('+x', '$(global.build_path:)/bootstrap.sh')
 .
 .endtemplate

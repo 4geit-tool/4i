@@ -17,7 +17,7 @@
 .
 .if defined(project.node_version)
 .
-. log('create "$(m.name)" package.json')
+. log('create "$(module.name)" package.json')
 . cached = cache_open("package.json")
 .
 {

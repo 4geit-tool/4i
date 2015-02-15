@@ -258,6 +258,16 @@ function load_module_dependencies
     load_xml("abstractor.xml")
     create_cm_directories()
     load_file("$(get_resource_path(module):)/script.gsl")
+    load_file("$(global.forgeit_path:)/assets/requirements__txt.gsl")
+    load_file("$(global.forgeit_path:)/assets/package__json.gsl")
+    load_file("$(global.forgeit_path:)/assets/module__bootstrap__sh.gsl")
+    load_file("build__sh.gsl")
+    load_file("run__sh.gsl")
+    abstractor__create_dirs(root->abstractor, global.cm_build_path)
+    abstractor__create_files(root->abstractor, global.cm_build_path)
+    if defined(root->abstractor)
+      delete root->abstractor
+    endif
     load_extension_dependencies(module, "post.gsl") # DO FILES LOCATION GOOD ???
     directory.setcwd(global.project_path)
     global.logcnt = "4i"

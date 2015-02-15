@@ -1,7 +1,7 @@
 .template 1
 .for project.module as m where !defined(m.virtual)
 .
-.cached = cache_open("$(m.name)_command.sh")
+.cached = cache_open("$(m.name)_command.sh", "", global.build_path, global.cache_path)
 #!/bin/bash
 
 .copyleft()
@@ -25,7 +25,7 @@ deactivate
 
 popd
 .
-.cache_close(cached)
+.cache_close(cached, global.build_path, global.cache_path)
 .chmod('+x', '$(global.build_path:)/$(m.name)_command.sh')
 .
 .endfor

@@ -17,6 +17,7 @@
   <!-- <core name="module" required_version="0.1.0"/> -->
   <core name="protocol" required_version="0.1.0"/>
   <core name="extension" required_version="0.1.0"/>
+  <core name="abstractor" required_version="0.1.0"/>
   <!-- <module name="toto" required_version="0.1.0"/> -->
 
   <todo>pull modules and extensions</todo>

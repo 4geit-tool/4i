@@ -1,5 +1,5 @@
 .template 1
-.cached = cache_open("run.sh")
+.cached = cache_open("run.sh", "", global.build_path, global.cache_path)
 #!/bin/bash
 
 .copyleft()
@@ -23,7 +23,7 @@ deactivate
 
 popd
 .
-.cache_close(cached)
+.cache_close(cached, global.build_path, global.cache_path)
 .chmod('+x', '$(global.build_path:)/run.sh')
 .
 .endtemplate
