@@ -134,10 +134,7 @@ endfunction
 # test if project node exists
 function test_project
   debug('test_project')
-  # convert_version_to_branch(root->project)
-  if defined(project.version)
-    project.branch = "v$(project.version:)"
-  endif
+  convert_version_to_branch(root->project)
   if !defined(root->project)
     error("No project node found")
   endif
@@ -291,11 +288,14 @@ function check_compatibility
 endfunction
 
 # load core dependencies
-function load_core_dependencies
+function load_core_dependencies(ctx)
   debug('load_core_dependencies')
-  for project.core as c
-    log("Loading $(c.name:) core ($(c.branch:))")
-    load_file("$(get_resource_path(c):)/$(c.name:).gsl")
+  my.ctx ?= root->forgeit
+  for project.core as c1
+    for my.ctx.core as c2 where c1.name = c2.name & c1.branch = c2.required_branch
+      log("Loading $(c1.name:) core ($(c1.branch:))")
+      load_file("$(get_resource_path(c1):)/$(c1.name:).gsl")
+    endfor
   endfor
 endfunction
 
@@ -339,6 +339,7 @@ function load_module_dependencies
     log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
     log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
     log("---")
+    load_core_dependencies(module)
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
     load_extension_dependencies(module, "pre.gsl")
