@@ -1,24 +1,40 @@
 <?xml version="1.0"?>
 
 <forgeit>
+  <zen>The motivation comes in setting up long and short term objectives.</zen>
+  <zen>The first thing you do in your day is to start a first pomodoro to realize whatever you need to do before working.</zen>
+  <zen>Then begin working with the next pomodoros.</zen>
+  <zen>Ajust the break times accordingly to do whatever else needed during your day.</zen>
+  <zen>Avoid as much as possible internal and external interuptions.</zen>
+
   <resource name="core" registry_uri="http://github.com/4geit-core"/>
   <resource name="module" registry_uri="http://github.com/4geit-module"/>
   <resource name="extension" registry_uri="http://github.com/4geit-extension"/>
   <resource name="project" registry_uri="http://github.com/4geit-project"/>
 
-  <core name="reference" required_version="0.1.0"/>
-  <core name="inclusion" required_version="0.1.0"/>
-  <core name="string" required_version="0.1.0"/>
-  <core name="logger" required_version="0.1.0"/>
-  <core name="file" required_version="0.1.0"/>
-  <core name="conditional" required_version="0.1.0"/>
-  <core name="cache" required_version="0.1.0"/>
-  <core name="list" required_version="0.1.0"/>
-  <!-- <core name="module" required_version="0.1.0"/> -->
-  <core name="protocol" required_version="0.1.0"/>
-  <core name="extension" required_version="0.1.0"/>
-  <core name="abstractor" required_version="0.1.0"/>
-  <!-- <module name="toto" required_version="0.1.0"/> -->
+  <!-- <core name="reference" required_version="0.1.0"/> -->
+  <!-- <core name="inclusion" required_version="0.1.0"/> -->
+  <!-- <core name="string" required_version="0.1.0"/> -->
+  <!-- <core name="logger" required_version="0.1.0"/> -->
+  <!-- <core name="file" required_version="0.1.0"/> -->
+  <!-- <core name="conditional" required_version="0.1.0"/> -->
+  <!-- <core name="cache" required_version="0.1.0"/> -->
+  <!-- <core name="list" required_version="0.1.0"/> -->
+  <!-- <core name="protocol" required_version="0.1.0"/> -->
+  <!-- <core name="extension" required_version="0.1.0"/> -->
+  <!-- <core name="abstractor" required_version="0.1.0"/> -->
+
+  <core name="reference" required_branch="master"/>
+  <core name="inclusion" required_branch="master"/>
+  <core name="string" required_branch="master"/>
+  <core name="logger" required_branch="master"/>
+  <core name="file" required_branch="master"/>
+  <core name="conditional" required_branch="master"/>
+  <core name="cache" required_branch="master"/>
+  <core name="list" required_branch="master"/>
+  <core name="protocol" required_branch="master"/>
+  <core name="extension" required_branch="master"/>
+  <core name="abstractor" required_branch="master"/>
 
   <todo>pull modules and extensions</todo>
   <todo>push modules and extensions</todo>
@@ -56,25 +72,32 @@
       </group>
       <node name="core" number="*">
 	<attribute name="name" required="True"/>
-	<attribute name="required_version" required="True"/>
-	<attribute name="version" required="True"/>
+	<attribute name="required_branch" required="True"/>
+	<attribute name="branch" required="True"/>
+	<attribute name="required_version"/>
+	<attribute name="version"/>
       </node> <!-- !core -->
       <node name="module" number="*">
 	<attribute name="name" required="True"/>
-	<attribute name="required_version" required="True"/>
-	<attribute name="version" required="True"/>
+	<attribute name="required_branch" required="True"/>
+	<attribute name="branch" required="True"/>
+	<attribute name="required_version"/>
+	<attribute name="version"/>
 	<group ref="requires"/>
 	<node name="protocol"/>
       </node> <!-- !module -->
       <node name="extension" number="*">
 	<attribute name="name" required="True"/>
-	<attribute name="required_version" required="True"/>
-	<attribute name="version" required="True"/>
+	<attribute name="required_branch" required="True"/>
+	<attribute name="branch" required="True"/>
+	<attribute name="required_version"/>
+	<attribute name="version"/>
 	<group ref="requires"/>
 	<node name="compatible">
 	  <node name="module" number="*">
 	    <attribute name="name" required="True"/>
-	    <attribute name="required_version" required="True"/>
+	    <attribute name="required_branch"/>
+	    <attribute name="required_version"/>
 	  </node> <!-- !module -->
 	</node> <!-- !compatible -->
 	<node name="urls"/>

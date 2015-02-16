@@ -8,6 +8,17 @@ function log(msg, ctx)
   endif
 endfunction
 
+function debug(msg, ctx)
+  if !global.debug
+    return
+  endif
+  if defined(my.ctx)
+    echo "[$(global.logcnt:)][$(my.ctx:)][debug] $(my.msg:)"
+  else
+    echo "[$(global.logcnt:)][debug] $(my.msg:)"
+  endif
+endfunction
+
 function error(msg, ctx)
   if defined(my.ctx)
     abort "[$(global.logcnt:)][$(my.ctx:)] Error: $(my.msg:)"
@@ -90,7 +101,49 @@ function create_project_directories
 endfunction
 
 function get_resource_path(item)
-  return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_v$(my.item.required_version)"
+  return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_$(my.item.required_branch:)"
+endfunction
+
+# convert required_version to required_branch
+function convert_required_version_to_required_branch
+  for root->forgeit.resource as ri
+    for project.$(ri.name) as i where defined(i.required_version) & !defined(i.required_branch)
+      i.required_branch = "v$(i.required_version:)"
+    endfor
+  endfor
+endfunction
+
+# convert required_version to required_branch in a context
+function convert_required_version_to_required_branch_in_ctx(ctx)
+  for root->forgeit.resource as r
+    for my.ctx.$(r.name) as item
+      if defined(item.required_version) & !defined(item.required_branch)
+        item.required_branch = "v$(item.required_version:)"
+      endif
+    endfor
+  endfor
+endfunction
+
+# convert version to branch for one item
+function convert_version_to_branch(item)
+  if defined(my.item.version) & !defined(my.item.branch)
+    my.item.branch = "v$(my.item.version:)"
+  endif
+  for my.item.compatible as c
+    for root->forgeit.resource as r
+      for c.$(r.name) as i where defined(i.required_version) & !defined(i.required_branch)
+        i.required_branch = "v$(i.required_version:)"
+      endfor
+    endfor
+  endfor
+endfunction
+
+# get repository depth
+function get_repository_depth(item)
+  if defined(my.item.required_version)
+    return " --depth 1"
+  endif
+  return ""
 endfunction
 
 # retrieve resources
@@ -100,11 +153,35 @@ function retrieve_resources
       my.uri = "$(r.registry_uri:)/$(i.name:)"
       my.dst = get_resource_path(i)
       if !file.exists(my.dst)
-        my.cmd = "git clone --depth 1 -b v$(i.required_version) $(my.uri:) $(my.dst:)"
+        my.cmd = "git clone$(get_repository_depth(i):) -b $(i.required_branch:) $(my.uri:) $(my.dst:)"
         if global.debug
           log(my.cmd)
         endif
-        log("Retrieving $(i.name:) $(r.name:) (v$(i.required_version))")
+        log("Retrieving $(i.name:) $(r.name:) ($(i.required_branch:))")
+        my.res = exec(my.cmd)
+        if defined(string.locate(my.res.err, 'fatal'))
+          if global.debug
+            log(my.res.err)
+          endif
+          error("A fatal error occured while retrieving $(i.name:) $(r.name:).")
+        endif
+      endif
+    endfor
+  endfor
+endfunction
+
+# update resources
+function update_resources
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
+      my.uri = "$(r.registry_uri:)/$(i.name:)"
+      my.dst = get_resource_path(i)
+      if !defined(i.required_version)
+        my.cmd = "git -C $(my.dst:) pull"
+        if global.debug
+          log(my.cmd)
+        endif
+        log("Updating $(i.name:) $(r.name:) ($(i.required_branch:))")
         my.res = exec(my.cmd)
         if defined(string.locate(my.res.err, 'fatal'))
           if global.debug
@@ -124,38 +201,13 @@ function merge_two_nodes(node1, node2)
   endfor
 endfunction
 
-function compare_version(i1, i2)
-  return my.i1.required_version = my.i2.version
-endfunction
-
-# load xml dependencies to project
-function load_xml_dependencies
-  for root->forgeit.resource as r
-    for project.$(r.name) as i where !defined(i.version)
-      my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
-      if global.debug
-        log(my.xml_filename)
-      endif
-      if file.exists(my.xml_filename)
-        my.tmp = XML.new()
-        xml to my.tmp from my.xml_filename
-        if !compare_version(i, my.tmp->$(r.name:))
-          error("$(r.name:) $(i.name:) is an inconsitent version ($(i.required_version) <> $(my.tmp->$(r.name:).version))")
-        else
-          i.version = my.tmp->$(r.name:).version
-        endif
-        merge_two_nodes(i, my.tmp->$(r.name:))
-      endif
-    endfor
-  endfor
-endfunction
-
-# copy dependencies to project
+# copy nested dependencies to project
 function copy_nested_dependencies
   for root->forgeit.resource as ri
     for project.$(ri.name) as i
-      for root->forgeit.registry as rj
-        for i.$(rj.name) as j where !defined(project->$(rj.name)(name=j.name))
+      convert_required_version_to_required_branch_in_ctx(i)
+      for root->forgeit.resource as rj
+        for i.$(rj.name) as j where !defined(project->$(rj.name)(name=j.name & branch=j.required_branch))
           copy j to project
         endfor
       endfor
@@ -163,19 +215,59 @@ function copy_nested_dependencies
   endfor
 endfunction
 
+function compare_branch(i1, i2)
+  return my.i1.required_branch = my.i2.branch
+endfunction
+
+# load xml dependencies to project
+function load_xml_dependencies
+  for root->forgeit.resource as r
+    for project.$(r.name) as i where !defined(i.branch)
+      my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
+      if global.debug
+        log(my.xml_filename)
+      endif
+      if file.exists(my.xml_filename)
+        my.tmp = XML.new()
+        xml to my.tmp from my.xml_filename
+        convert_version_to_branch(my.tmp->$(r.name:))
+        if !compare_branch(i, my.tmp->$(r.name:))
+          error("$(r.name:) $(i.name:) is an inconsitent branch ($(i.required_branch:) <> $(my.tmp->$(r.name:).branch:)).")
+        else
+          i.branch = my.tmp->$(r.name:).branch
+        endif
+        merge_two_nodes(i, my.tmp->$(r.name:))
+      endif
+    endfor
+  endfor
+endfunction
+
 # get, copy and load nested dependencies
 function get_copy_load_nested_dependencies
   my.found = 0
+  my.count = 0
   while !my.found
     my.found = 1
     for root->forgeit.resource as r
-      for project.$(r.name) as i where !defined(i.version)
+      if defined(project->$(r.name)(!defined(branch)))
+        debug("save root_$(my.count)_1")
+        project.save("$(global.build_path:)/root_$(my.count)_1.xml")
+        convert_required_version_to_required_branch()
+        debug("save root_$(my.count)_2")
+        project.save("$(global.build_path:)/root_$(my.count)_2.xml")
         retrieve_resources()
-        copy_nested_dependencies()
+        debug("save root_$(my.count)_3")
+        project.save("$(global.build_path:)/root_$(my.count)_3.xml")
         load_xml_dependencies()
+        debug("save root_$(my.count)_4")
+        project.save("$(global.build_path:)/root_$(my.count)_4.xml")
+        copy_nested_dependencies()
+        debug("save root_$(my.count)_5")
+        project.save("$(global.build_path:)/root_$(my.count)_5.xml")
         my.found = 0
-      endfor
+      endif
     endfor
+    my.count += 1
   endwhile
 endfunction
 
@@ -190,8 +282,8 @@ function check_compatibility
         for root->forgeit.resource as rj
           for c.$(rj.name) as j
             if !defined(project->$(rj.name)(name=j.name))
-              error('$(ri.name:) $(i.name) (v$(i.version)) requires $(rj.name:) $(j.name:) (v$(j.required_version)).')
-            elsif !defined(project->$(rj.name)(name=j.name & version=j.required_version))
+              error('$(ri.name:) $(i.name) ($(i.branch:)) requires $(rj.name:) $(j.name:) ($(j.required_branch:)).')
+            elsif !defined(project->$(rj.name)(name=j.name & branch=j.required_branch))
               error('compatibility issue beetween $(ri.name:) $(i.name) and $(rj.name:) $(j.name:).')
             endif
           endfor
@@ -204,7 +296,7 @@ endfunction
 # load core dependencies
 function load_core_dependencies
   for project.core as c
-    log("Loading $(c.name:) core (v$(c.version))")
+    log("Loading $(c.name:) core ($(c.branch:))")
     load_file("$(get_resource_path(c):)/$(c.name:).gsl")
   endfor
 endfunction
@@ -227,9 +319,9 @@ endfunction
 
 # load extension dependencies
 function load_extension_dependencies(resource, file)
-  for project.extension where (defined(extension->compatible) & defined(extension->compatible->$(name(my.resource))(name=my.resource.name & required_version=my.resource.version))) | !defined(extension->compatible)
+  for project.extension where (defined(extension->compatible) & defined(extension->compatible->$(name(my.resource))(name=my.resource.name & required_branch=my.resource.branch))) | !defined(extension->compatible)
     if global.debug
-      log("Loading $(extension.name:) extension (v$(extension.version)) $(my.file:)")
+      log("Loading $(extension.name:) extension ($(extension.branch:)) $(my.file:)")
     endif
     load_file("$(get_resource_path(extension):)/$(my.file:)")
   endfor
@@ -245,7 +337,7 @@ endfunction
 function load_module_dependencies
   for project.module
     global.logcnt = module.name
-    log("Loading $(module.name:) module (v$(module.version))")
+    log("Loading $(module.name:) module ($(module.branch:))")
     global.cm_build_path = "$(global.build_path:)$(module.name:)"
     global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
     log("---")
