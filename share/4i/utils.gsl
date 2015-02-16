@@ -29,6 +29,7 @@ endfunction
 
 # exec a command and redirects the output as a function return value
 function exec(cmd)
+  debug('exec "$(my.cmd:)"')
   my.outname = "/tmp/gslcmd_$(string.hash(my.cmd)).out"
   my.errname = "/tmp/gslcmd_$(string.hash(my.cmd)).err"
   my.p = proc.new(my.cmd, '.', '/dev/stdin', my.outname, my.errname)
@@ -42,9 +43,7 @@ function exec(cmd)
 endfunction
 
 function load_file(fn)
-  if global.debug
-    log('load_file "$(my.fn:)"')
-  endif
+  debug('load_file "$(my.fn:)"')
   if file.exists(my.fn)
     gsl from my.fn
   endif
@@ -52,25 +51,14 @@ endfunction
 
 # load xml
 function load_xml(fn)
-  if global.debug
-    log('load_xml "$(my.fn:)"')
-  endif
+  debug('load_xml "$(my.fn:)"')
   if file.exists(my.fn)
     xml to root from my.fn
   endif
 endfunction
 
-# test if project node exists
-function test_project
-  if !defined(root->project)
-    error("No project node found")
-  endif
-  if !defined(project.name)
-    error("No attribute name found")
-  endif
-endfunction
-
 function load_config
+  debug('load_config')
   xml to root from "$(global.forgeit_path:)/forgeit.xml"
   for root->forgeit.resource as r
     r.registry_uri = env.get("FORGEIT_$(r.name:upper)_REGISTRY_URI") ? r.registry_uri
@@ -79,6 +67,7 @@ endfunction
 
 # copy dependencies to project
 function copy_dependencies
+  debug('copy_dependencies')
   for root->forgeit.resource as r
     for root->forgeit.$(r.name) as i
       copy i to project
@@ -88,14 +77,15 @@ endfunction
 
 # create resource directories
 function create_resource_directories
+  debug('create_resource_directories')
   for root->forgeit.resource as r
-    # log("process $(r.name:)")
     directory.create("$(global.resource_prefix:)/$(r.name:)")
   endfor
 endfunction
 
 # create project directories
 function create_project_directories
+  debug('create_project_directories')
   directory.create(global.build_path)
   directory.create(global.cache_path)
 endfunction
@@ -106,6 +96,7 @@ endfunction
 
 # convert required_version to required_branch
 function convert_required_version_to_required_branch
+  debug('convert_required_version_to_required_branch')
   for root->forgeit.resource as ri
     for project.$(ri.name) as i where defined(i.required_version) & !defined(i.required_branch)
       i.required_branch = "v$(i.required_version:)"
@@ -115,6 +106,7 @@ endfunction
 
 # convert required_version to required_branch in a context
 function convert_required_version_to_required_branch_in_ctx(ctx)
+  debug('convert_required_version_to_required_branch_in_ctx')
   for root->forgeit.resource as r
     for my.ctx.$(r.name) as item
       if defined(item.required_version) & !defined(item.required_branch)
@@ -126,6 +118,7 @@ endfunction
 
 # convert version to branch for one item
 function convert_version_to_branch(item)
+  debug('convert_version_to_branch')
   if defined(my.item.version) & !defined(my.item.branch)
     my.item.branch = "v$(my.item.version:)"
   endif
@@ -138,31 +131,38 @@ function convert_version_to_branch(item)
   endfor
 endfunction
 
+# test if project node exists
+function test_project
+  debug('test_project')
+  # convert_version_to_branch(root->project)
+  if defined(project.version)
+    project.branch = "v$(project.version:)"
+  endif
+  if !defined(root->project)
+    error("No project node found")
+  endif
+  if !defined(project.name)
+    error("No attribute name found")
+  endif
+endfunction
+
 # get repository depth
 function get_repository_depth(item)
-  if defined(my.item.required_version)
-    return " --depth 1"
-  endif
-  return ""
+  return defined(my.item.required_version) ?? " --depth 1" ? ""
 endfunction
 
 # retrieve resources
 function retrieve_resources
+  debug('retrieve_resources')
   for root->forgeit.resource as r
     for project.$(r.name) as i
       my.uri = "$(r.registry_uri:)/$(i.name:)"
       my.dst = get_resource_path(i)
       if !file.exists(my.dst)
-        my.cmd = "git clone$(get_repository_depth(i):) -b $(i.required_branch:) $(my.uri:) $(my.dst:)"
-        if global.debug
-          log(my.cmd)
-        endif
         log("Retrieving $(i.name:) $(r.name:) ($(i.required_branch:))")
-        my.res = exec(my.cmd)
+        my.res = exec("git clone$(get_repository_depth(i):) -b $(i.required_branch:) $(my.uri:) $(my.dst:)")
         if defined(string.locate(my.res.err, 'fatal'))
-          if global.debug
-            log(my.res.err)
-          endif
+          debug(my.res.err)
           error("A fatal error occured while retrieving $(i.name:) $(r.name:).")
         endif
       endif
@@ -172,21 +172,18 @@ endfunction
 
 # update resources
 function update_resources
+  debug('update_resources')
   for root->forgeit.resource as r
     for project.$(r.name) as i
       my.uri = "$(r.registry_uri:)/$(i.name:)"
       my.dst = get_resource_path(i)
       if !defined(i.required_version)
-        my.cmd = "git -C $(my.dst:) pull"
-        if global.debug
-          log(my.cmd)
-        endif
         log("Updating $(i.name:) $(r.name:) ($(i.required_branch:))")
-        my.res = exec(my.cmd)
+        my.res = exec("git -C $(my.dst:) pull")
+        debug(my.res.err)
+        debug(my.res.out)
         if defined(string.locate(my.res.err, 'fatal'))
-          if global.debug
-            log(my.res.err)
-          endif
+          debug(my.res.err)
           error("A fatal error occured while retrieving $(i.name:) $(r.name:).")
         endif
       endif
@@ -203,6 +200,7 @@ endfunction
 
 # copy nested dependencies to project
 function copy_nested_dependencies
+  debug('copy_nested_dependencies')
   for root->forgeit.resource as ri
     for project.$(ri.name) as i
       convert_required_version_to_required_branch_in_ctx(i)
@@ -221,12 +219,11 @@ endfunction
 
 # load xml dependencies to project
 function load_xml_dependencies
+  debug('load_xml_dependencies')
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.branch)
       my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
-      if global.debug
-        log(my.xml_filename)
-      endif
+      debug(my.xml_filename)
       if file.exists(my.xml_filename)
         my.tmp = XML.new()
         xml to my.tmp from my.xml_filename
@@ -244,40 +241,40 @@ endfunction
 
 # get, copy and load nested dependencies
 function get_copy_load_nested_dependencies
-  my.found = 0
+  debug('get_copy_load_nested_dependencies')
   my.count = 0
-  while !my.found
-    my.found = 1
+  my.end = 0
+  while !my.end
+    my.end = 1
     for root->forgeit.resource as r
-      if defined(project->$(r.name)(!defined(branch)))
-        debug("save root_$(my.count)_1")
-        project.save("$(global.build_path:)/root_$(my.count)_1.xml")
-        convert_required_version_to_required_branch()
-        debug("save root_$(my.count)_2")
-        project.save("$(global.build_path:)/root_$(my.count)_2.xml")
-        retrieve_resources()
-        debug("save root_$(my.count)_3")
-        project.save("$(global.build_path:)/root_$(my.count)_3.xml")
-        load_xml_dependencies()
-        debug("save root_$(my.count)_4")
-        project.save("$(global.build_path:)/root_$(my.count)_4.xml")
-        copy_nested_dependencies()
-        debug("save root_$(my.count)_5")
-        project.save("$(global.build_path:)/root_$(my.count)_5.xml")
-        my.found = 0
-      endif
+      for project.$(r.name) as i where !defined(i.branch)
+        my.end = 0
+      endfor
     endfor
+    debug("save root_$(my.count)_1")
+    project.save("$(global.build_path:)/root_$(my.count)_1.xml")
+    convert_required_version_to_required_branch()
+    debug("save root_$(my.count)_2")
+    project.save("$(global.build_path:)/root_$(my.count)_2.xml")
+    retrieve_resources()
+    debug("save root_$(my.count)_3")
+    project.save("$(global.build_path:)/root_$(my.count)_3.xml")
+    load_xml_dependencies()
+    debug("save root_$(my.count)_4")
+    project.save("$(global.build_path:)/root_$(my.count)_4.xml")
+    copy_nested_dependencies()
+    debug("save root_$(my.count)_5")
+    project.save("$(global.build_path:)/root_$(my.count)_5.xml")
     my.count += 1
   endwhile
 endfunction
 
 # check compatibility
 function check_compatibility
+  debug('check_compatibility')
   for root->forgeit.resource as ri
     for project.$(ri.name) as i where defined(i->compatible)
-      if global.debug
-        log('check compatibility for $(i.name:) $(ri.name:)')
-      endif
+      debug('check compatibility for $(i.name:) $(ri.name:)')
       for i.compatible as c
         for root->forgeit.resource as rj
           for c.$(rj.name) as j
@@ -295,6 +292,7 @@ endfunction
 
 # load core dependencies
 function load_core_dependencies
+  debug('load_core_dependencies')
   for project.core as c
     log("Loading $(c.name:) core ($(c.branch:))")
     load_file("$(get_resource_path(c):)/$(c.name:).gsl")
@@ -303,15 +301,11 @@ endfunction
 
 # check protocol
 function check_protocol
-  if global.debug
-    log('check global protocol')
-  endif
+  debug('check_protocol')
   protocol__check(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i
-      if global.debug
-        log('check $(i.name:) $(r.name:) protocol')
-      endif
+      debug('check $(i.name:) $(r.name:) protocol')
       protocol__check(i)
     endfor
   endfor
@@ -319,22 +313,23 @@ endfunction
 
 # load extension dependencies
 function load_extension_dependencies(resource, file)
+  debug('load_extension_dependencies')
   for project.extension where (defined(extension->compatible) & defined(extension->compatible->$(name(my.resource))(name=my.resource.name & required_branch=my.resource.branch))) | !defined(extension->compatible)
-    if global.debug
-      log("Loading $(extension.name:) extension ($(extension.branch:)) $(my.file:)")
-    endif
+    debug("Loading $(extension.name:) extension ($(extension.branch:)) $(my.file:)")
     load_file("$(get_resource_path(extension):)/$(my.file:)")
   endfor
 endfunction
 
 # create current module directories
 function create_cm_directories
+  debug('create_cm_directories')
   directory.create(global.cm_build_path)
   directory.create(global.cm_cache_path)
 endfunction
 
 # load module dependencies
 function load_module_dependencies
+  debug('load_module_dependencies')
   for project.module
     global.logcnt = module.name
     log("Loading $(module.name:) module ($(module.branch:))")
@@ -375,16 +370,10 @@ function load_post_file
 endfunction
 
 function create_assets()
-  # bootstrap.sh
+  debug('create_assets')
   load_file("$(global.forgeit_path:)/assets/bootstrap__sh.gsl")
-
-  # run.sh
   load_file("$(global.forgeit_path:)/assets/run__sh.gsl")
-
-  # command.sh
   load_file("$(global.forgeit_path:)/assets/command__sh.gsl")
-
-  # copy files
   file__copy_files(project, '', global.build_path)
 endfunction
 
