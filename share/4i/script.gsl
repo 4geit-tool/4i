@@ -18,18 +18,6 @@ function set_variables
   global.cache_path = directory.resolve("$(global.project_path:)build/.cache/$(project_name:)")
 endfunction
 
-function print_variables
-  log("---")
-  log("$("project_name"%15s): [$(global.project_name:)]")
-  log("$("debug"%15s): [$(global.debug:)]")
-  log("$("resource_prefix"%15s): [$(global.resource_prefix:)]")
-  log("$("forgeit_path"%15s): [$(global.forgeit_path:)]")
-  log("$("project_path"%15s): [$(global.project_path:)]")
-  log("$("build_path"%15s): [$(global.build_path:)]")
-  log("$("cache_path"%15s): [$(global.cache_path:)]")
-  log("---")
-endfunction
-
 configure()
 set_variables()
 
@@ -69,6 +57,7 @@ load_module_dependencies()
 log("---")
 create_assets()
 load_post_file()
+ready()
 
 save root
 

@@ -373,12 +373,36 @@ function load_post_file
   load_file('$(global.project_path:)/post.gsl')
 endfunction
 
-function create_assets()
+function create_assets
   debug('create_assets')
   load_file("$(global.forgeit_path:)/assets/bootstrap__sh.gsl")
   load_file("$(global.forgeit_path:)/assets/run__sh.gsl")
   load_file("$(global.forgeit_path:)/assets/command__sh.gsl")
   file__copy_files(project, '', global.build_path)
+endfunction
+
+# print global variables
+function print_variables
+  log("---")
+  log("$("project_name"%15s): [$(global.project_name:)]")
+  log("$("debug"%15s): [$(global.debug:)]")
+  log("$("resource_prefix"%15s): [$(global.resource_prefix:)]")
+  log("$("forgeit_path"%15s): [$(global.forgeit_path:)]")
+  log("$("project_path"%15s): [$(global.project_path:)]")
+  log("$("build_path"%15s): [$(global.build_path:)]")
+  log("$("cache_path"%15s): [$(global.cache_path:)]")
+  log("---")
+endfunction
+
+# ready message
+function ready
+  log("$(global.project_name:) is ready, you can call now one of the prepared post-processing scripts.")
+  log("$("bootstrap"%10s): [$(global.build_path:)bootstrap.sh]")
+  log("$("run"%10s): [$(global.build_path:)run.sh]")
+  for project.module as m
+    log("$(m.name%10s): [$(global.build_path:)$(m.name:)_command.sh]")
+  endfor
+  log("---")
 endfunction
 
 .endtemplate
