@@ -306,7 +306,7 @@ function check_protocol
   for root->forgeit.resource as r
     for project.$(r.name) as i
       debug('check $(i.name:) $(r.name:) protocol')
-      protocol__check(i)
+      protocol__check(i, root, '$(i.name:)][')
     endfor
   endfor
 endfunction

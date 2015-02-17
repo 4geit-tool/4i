@@ -50,7 +50,7 @@
       <attribute name="name" required="True"/>
       <attribute name="vendor"/>
       <attribute name="vendor_email"/>
-      <!-- <attribute name="branch" required="True"/> -->
+      <attribute name="branch" required="True"/>
       <attribute name="version"/>
       <attribute name="license"/>
       <attribute name="description"/>
