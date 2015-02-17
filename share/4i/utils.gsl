@@ -183,6 +183,9 @@ function update_resources
           debug(my.res.err)
           error("A fatal error occured while retrieving $(i.name:) $(r.name:).")
         endif
+        if defined(string.locate(my.res.out, 'Updating'))
+          log("$(i.name:) $(r.name:) has been updated.")
+        endif
       endif
     endfor
   endfor
