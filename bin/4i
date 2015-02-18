@@ -2,7 +2,6 @@
 
 import argparse, subprocess, sys, os, logging
 from collections import OrderedDict
-from six import _print
 
 VERSION = "master"
 
@@ -23,7 +22,7 @@ def build(args):
     try:
         subprocess.call(GSLCMD, shell=True)
     except KeyboardInterrupt:
-        _print('Cancled')
+        print('Canceled')
         sys.exit(-1)
 
 def get_name_version(item):
@@ -37,32 +36,38 @@ def _list(args):
 
     for resource in ['core', 'module', 'extension']:
         dashes = (30*2+1)*'-'
-        _print('%30s' % resource.upper())
-        _print(dashes)
-        _print('%30s %30s' % ('Name', 'Version'))
-        _print(dashes)
+        print('%30s' % resource.upper())
+        print(dashes)
+        print('%30s %30s' % ('Name', 'Version'))
+        print(dashes)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for item in sorted(os.listdir(path)):
-            _print('%30s %30s' % get_name_version(item))
-        _print()
+            print('%30s %30s' % get_name_version(item))
+        print('')
 
 def update(args):
     logger.debug('update')
 
     for resource in ['core', 'module', 'extension']:
-        _print('Updating %s resource...' % resource)
-        _print('-'*80)
+        print('Updating %s resource...' % resource)
+        print('-'*80)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for item in sorted(os.listdir(path)):
-            _print('\t%30s %30s' % get_name_version(item))
+            print('\t%30s %30s' % get_name_version(item))
             sys.stdout.flush()
             cmd = 'git -C %s/%s/%s pull -q' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource, item)
             try:
                 subprocess.call(cmd, shell=True)
             except KeyboardInterrupt:
-                _print('Cancled')
+                print('Canceled')
                 sys.exit(-1)
-        _print()
+        print('')
+
+def bootstrap(args):
+    logger.debug('bootstrap')
+
+def run(args):
+    logger.debug('run')
 
 if __name__ == '__main__':
     common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
@@ -93,6 +98,12 @@ if __name__ == '__main__':
     sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
     sp.set_defaults(func=update)
 
+    sp = subparsers.add_parser('bootstrap', help='Use the post-processing bootstrapping script.', **common_options)
+    sp.set_defaults(func=bootstrap)
+
+    sp = subparsers.add_parser('run', help='Use the post-processing running script.', **common_options)
+    sp.set_defaults(func=run)
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -100,9 +111,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.levels:
-        _print("Here's the verbose levels available:")
+        print("Here's the verbose levels available:")
         for keys in LEVELS.keys():
-            _print("\t%s" % keys)
+            print("\t%s" % keys)
         sys.exit()
 
     if args.output:
@@ -120,7 +131,7 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.version:
-        _print(VERSION)
+        print(VERSION)
         sys.exit()
 
     os.environ['FORGEIT_PREFIX'] = args.prefix if args.prefix else \
