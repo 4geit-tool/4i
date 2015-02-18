@@ -1,7 +1,135 @@
-#!/bin/sh
+#!/usr/bin/env python2
 
-PREFIX=${0%/*}
-PREFIX=${PREFIX%/*}
-export FORGEIT_PREFIX=$PREFIX
+import argparse, subprocess, sys, os, logging
+from collections import OrderedDict
+from six import _print
 
-gsl -a -script:${PREFIX}/share/4i/script.gsl $*
+VERSION = "master"
+
+LEVELS = OrderedDict([('debug', logging.DEBUG),
+                      ('info', logging.INFO),
+                      ('warning', logging.WARNING),
+                      ('error', logging.ERROR),
+                      ('quiet', logging.CRITICAL),])
+
+logger = logging.getLogger("4i")
+
+def build(args):
+    logger.debug('build')
+
+    GSLCMD = "gsl -a -script:%s/share/4i/script.gsl %s" % \
+             (os.environ['FORGEIT_PREFIX'], args.project_xml)
+
+    try:
+        subprocess.call(GSLCMD, shell=True)
+    except KeyboardInterrupt:
+        _print('Cancled')
+        sys.exit(-1)
+
+def get_name_version(item):
+    kwds = item.split('_')
+    name = '_'.join(kwds[:-1])
+    version = kwds[-1]
+    return name, version
+
+def _list(args):
+    logger.debug('_list')
+
+    for resource in ['core', 'module', 'extension']:
+        dashes = (30*2+1)*'-'
+        _print('%30s' % resource.upper())
+        _print(dashes)
+        _print('%30s %30s' % ('Name', 'Version'))
+        _print(dashes)
+        path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
+        for item in sorted(os.listdir(path)):
+            _print('%30s %30s' % get_name_version(item))
+        _print()
+
+def update(args):
+    logger.debug('update')
+
+    for resource in ['core', 'module', 'extension']:
+        _print('Updating %s resource...' % resource)
+        _print('-'*80)
+        path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
+        for item in sorted(os.listdir(path)):
+            _print('\t%30s %30s' % get_name_version(item))
+            sys.stdout.flush()
+            cmd = 'git -C %s/%s/%s pull -q' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource, item)
+            try:
+                subprocess.call(cmd, shell=True)
+            except KeyboardInterrupt:
+                _print('Cancled')
+                sys.exit(-1)
+        _print()
+
+if __name__ == '__main__':
+    common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
+
+    parser = argparse.ArgumentParser(description='4i model-oriented programming compiler.', **common_options)
+
+    parser.add_argument('--verbose', '-v', choices=[x for x in LEVELS.keys()], default='error', help='Set a verbosity level.')
+    parser.add_argument('--levels', '-l', action='store_true', default=False, help='List all the verbosity levels.')
+    parser.add_argument('--output', '-o', help='all the logging messages are redirected to the specified filename.')
+    parser.add_argument('--debug', '-d', action='store_const', const='debug', dest='verbose', help='Display all the messages.')
+    parser.add_argument('--info', '-i', action='store_const', const='info', dest='verbose', help='Display the info messages.')
+    parser.add_argument('--warning', '-w', action='store_const', const='warning', dest='verbose', help='Only display the warning and error messages.')
+    parser.add_argument('--error', '-e', action='store_const', const='error', dest='verbose', help='Only display the error messages.')
+    parser.add_argument('--quiet', '-q', action='store_const', const='quiet', dest='verbose', help='Quiet level of verbosity only displaying the critical error messages.')
+    parser.add_argument('--version', '-V', action='store_true', default=False, help='Show the version of 4i.')
+    parser.add_argument('--prefix', help='set the prefix path')
+    parser.add_argument('--resource_prefix', help='set the resource prefix path')
+
+    subparsers = parser.add_subparsers(help='sub-command help')
+
+    sp = subparsers.add_parser('build', help='Build a project xml file.', **common_options)
+    sp.add_argument('project_xml', help='project xml file')
+    sp.set_defaults(func=build)
+
+    sp = subparsers.add_parser('list', help='List the retrieved resources.', **common_options)
+    sp.set_defaults(func=_list)
+
+    sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
+    sp.set_defaults(func=update)
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    if args.levels:
+        _print("Here's the verbose levels available:")
+        for keys in LEVELS.keys():
+            _print("\t%s" % keys)
+        sys.exit()
+
+    if args.output:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+            filename=args.output, filemode='a'
+            )
+    else:
+        logging.basicConfig(
+            level=LEVELS.get(args.verbose, logging.NOTSET),
+            format='%(name)-12s: %(levelname)-8s %(message)s'
+        )
+
+    logger.debug(args)
+
+    if args.version:
+        _print(VERSION)
+        sys.exit()
+
+    os.environ['FORGEIT_PREFIX'] = args.prefix if args.prefix else \
+                                   '/'.join(sys.argv[0].split('/')[:-2])
+    os.environ['FORGEIT_RESOURCE_PREFIX'] = args.resource_prefix if args.resource_prefix else \
+                                            "%s/.4geit" % os.environ['HOME']
+
+    if 'func' not in args:
+        parser.print_help()
+        sys.exit()
+
+    args.func(args)
