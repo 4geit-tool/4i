@@ -33,6 +33,8 @@
   <todo>create core library</todo>
   <todo>push/pull core library</todo>
   <todo>gitify output</todo>
+
+  <bug>recusive call of run.sh if bad module name</bug>
   
   <protocol>
     <node name="project">

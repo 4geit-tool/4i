@@ -21,9 +21,9 @@ endfunction
 
 function error(msg, ctx)
   if defined(my.ctx)
-    abort "[$(global.logcnt:)][$(my.ctx:)] Error: $(my.msg:)"
+    abort "[$(global.logcnt:)][$(my.ctx:)][error] $(my.msg:)"
   else
-    abort "[$(global.logcnt:)] Error: $(my.msg:)"
+    abort "[$(global.logcnt:)][error] $(my.msg:)"
   endif
 endfunction
 
@@ -91,6 +91,9 @@ function create_project_directories
 endfunction
 
 function get_resource_path(item)
+  if !defined(my.item.required_branch)
+    error('$(my.item.name:) $(name(my.item):) does not define a required_branch attribute.')
+  endif
   return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_$(my.item.required_branch:)"
 endfunction
 
@@ -396,11 +399,11 @@ endfunction
 
 # ready message
 function ready
-  log("$(global.project_name:) is ready, you can call now one of the prepared post-processing scripts.")
-  log("$("bootstrap"%10s): [$(global.build_path:)bootstrap.sh]")
-  log("$("run"%10s): [$(global.build_path:)run.sh]")
+  log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
+  log("$("bootstrap"%10s): [4i bootstrap $(project_name:)]")
+  log("$("run"%10s): [4i run $(project_name:)]")
   for project.module as m
-    log("$(m.name%10s): [$(global.build_path:)$(m.name:)_command.sh]")
+    log("$(m.name%10s): [4i command $(project_name:) $(m.name:)]")
   endfor
   log("---")
 endfunction

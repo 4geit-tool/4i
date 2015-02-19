@@ -18,6 +18,8 @@ def is_file_empty(fn):
     return os.stat(fn).st_size == 0
 
 def execute(cmd, piped=True, _input=None):
+    logger.debug('execute')
+    logger.debug(cmd)
     try:
         if piped:
             p = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
@@ -127,6 +129,16 @@ def run(args):
     logger.debug('run')
     execute('./build/%s/run.sh %s' % (args.project, args.module), piped=False)
 
+def command(args):
+    logger.debug('command')
+    execute('./build/%s/%s_command.sh %s' % (args.project, args.module, ' '.join(args.command)), piped=False)
+
+def clean(args):
+    logger.debug('clean')
+    for resource in RESOURCES:
+        print('Cleaning up %s resources...' % resource)
+        execute('rm -rf %s/%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource), piped=False)
+
 if __name__ == '__main__':
     common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
 
@@ -147,7 +159,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help='Sub-command help.')
 
     sp = subparsers.add_parser('build', help='Build a project xml file.', **common_options)
-    sp.add_argument('project_xml', help='project xml file')
+    sp.add_argument('project_xml', help='Project xml file.')
     sp.set_defaults(func=build)
 
     sp = subparsers.add_parser('list', help='List the retrieved resources.', **common_options)
@@ -156,7 +168,7 @@ if __name__ == '__main__':
     sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
     sp.add_argument('name', nargs='?', help='Name of the specific resource to update.')
     sp.add_argument('branch', nargs='?', help='Branch of the resource to update.')
-    sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to retrieve.')
+    sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to update.')
     sp.set_defaults(func=update)
 
     sp = subparsers.add_parser('retrieve', help='Retrieve resources.', **common_options)
@@ -173,6 +185,15 @@ if __name__ == '__main__':
     sp.add_argument('project', help='Name of the project.')
     sp.add_argument('module', help='Name of the module.')
     sp.set_defaults(func=run)
+
+    sp = subparsers.add_parser('command', help='Use the post-processing command script.', **common_options)
+    sp.add_argument('project', help='Name of the project.')
+    sp.add_argument('module', help='Name of the module.')
+    sp.add_argument('command', nargs='+', help='The command line to execute.')
+    sp.set_defaults(func=command)
+    
+    sp = subparsers.add_parser('clean', help='Clean up the retrieved resources.', **common_options)
+    sp.set_defaults(func=clean)
 
     if len(sys.argv) == 1:
         parser.print_help()
