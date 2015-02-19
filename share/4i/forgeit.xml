@@ -12,18 +12,6 @@
   <resource name="extension" registry_uri="http://github.com/4geit-extension"/>
   <resource name="project" registry_uri="http://github.com/4geit-project"/>
 
-  <!-- <core name="reference" required_version="0.1.0"/> -->
-  <!-- <core name="inclusion" required_version="0.1.0"/> -->
-  <!-- <core name="string" required_version="0.1.0"/> -->
-  <!-- <core name="logger" required_version="0.1.0"/> -->
-  <!-- <core name="file" required_version="0.1.0"/> -->
-  <!-- <core name="conditional" required_version="0.1.0"/> -->
-  <!-- <core name="cache" required_version="0.1.0"/> -->
-  <!-- <core name="list" required_version="0.1.0"/> -->
-  <!-- <core name="protocol" required_version="0.1.0"/> -->
-  <!-- <core name="extension" required_version="0.1.0"/> -->
-  <!-- <core name="abstractor" required_version="0.1.0"/> -->
-
   <core name="reference" required_branch="master"/>
   <core name="inclusion" required_branch="master"/>
   <core name="string" required_branch="master"/>
@@ -44,6 +32,7 @@
   <todo>deploy project</todo>
   <todo>create core library</todo>
   <todo>push/pull core library</todo>
+  <todo>gitify output</todo>
   
   <protocol>
     <node name="project">
@@ -55,6 +44,7 @@
       <attribute name="license"/>
       <attribute name="description"/>
       <node name="todo" number="*"/>
+      <node name="bug" number="*"/>
       <node name="author" number="*">
 	<attribute name="name" required="True"/>
 	<attribute name="email"/>
@@ -77,6 +67,7 @@
 	<attribute name="branch" required="True"/>
 	<attribute name="required_version"/>
 	<attribute name="version"/>
+	<node name="protocol"/>
       </node> <!-- !core -->
       <node name="module" number="*">
 	<attribute name="name" required="True"/>

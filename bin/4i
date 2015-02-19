@@ -4,6 +4,7 @@ import argparse, subprocess, sys, os, logging
 from collections import OrderedDict
 
 VERSION = "master"
+RESOURCES = ['core', 'module', 'extension']
 
 LEVELS = OrderedDict([('debug', logging.DEBUG),
                       ('info', logging.INFO),
@@ -13,68 +14,125 @@ LEVELS = OrderedDict([('debug', logging.DEBUG),
 
 logger = logging.getLogger("4i")
 
-def build(args):
-    logger.debug('build')
+def is_file_empty(fn):
+    return os.stat(fn).st_size == 0
 
-    GSLCMD = "gsl -a -script:%s/share/4i/script.gsl %s" % \
-             (os.environ['FORGEIT_PREFIX'], args.project_xml)
-
+def execute(cmd, piped=True, _input=None):
     try:
-        subprocess.call(GSLCMD, shell=True)
+        if piped:
+            p = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if _input:
+                out, err = p.communicate(input=_input)
+            else:
+                out, err = p.communicate()
+            logger.debug(out)
+            logger.debug(err)
+            return out, err
+        else:
+            subprocess.call(cmd.split())
     except KeyboardInterrupt:
         print('Canceled')
         sys.exit(-1)
 
-def get_name_version(item):
+def get_name_branch(item):
     kwds = item.split('_')
     name = '_'.join(kwds[:-1])
-    version = kwds[-1]
-    return name, version
+    branch = kwds[-1]
+    return name, branch
+
+def listdir(path):
+    try:
+        for item in sorted(os.listdir(path)):
+            yield get_name_branch(item)
+    except OSError:
+        pass
+
+def build(args):
+    logger.debug('build')
+
+    if is_file_empty(args.project_xml):
+        logger.error('The project file %s is empty.' % args.project_xml)
+        sys.exit(-1)
+    
+    execute("gsl -a -script:%s/share/4i/script.gsl %s" % \
+            (os.environ['FORGEIT_PREFIX'], args.project_xml),
+            piped=False)
 
 def _list(args):
     logger.debug('_list')
 
-    for resource in ['core', 'module', 'extension']:
+    for resource in RESOURCES:
         dashes = (30*2+1)*'-'
         print('%30s' % resource.upper())
         print(dashes)
-        print('%30s %30s' % ('Name', 'Version'))
+        print('%30s %30s' % ('Name', 'Branch'))
         print(dashes)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
-        for item in sorted(os.listdir(path)):
-            print('%30s %30s' % get_name_version(item))
+        for name, branch in listdir(path):
+            print('%30s %30s' % (name, branch))
         print('')
+
+def update_item(resource, name, branch):
+    print('\t%30s %30s' % (name, branch))
+    sys.stdout.flush()
+    out, err = execute('git -C %s/%s/%s_%s pull -q' % \
+                       (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                        resource, name, branch))
 
 def update(args):
     logger.debug('update')
-
-    for resource in ['core', 'module', 'extension']:
+    
+    resource_filter = lambda r: not args.resource or (args.resource and r == args.resource)
+    name_branch_filter = lambda (n,b): not args.name or (args.name and n == args.name and \
+                          (not args.branch or (args.branch and b == args.branch)))
+    
+    for resource in filter(resource_filter, RESOURCES):
         print('Updating %s resource...' % resource)
         print('-'*80)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
-        for item in sorted(os.listdir(path)):
-            print('\t%30s %30s' % get_name_version(item))
-            sys.stdout.flush()
-            cmd = 'git -C %s/%s/%s pull -q' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource, item)
-            try:
-                subprocess.call(cmd, shell=True)
-            except KeyboardInterrupt:
-                print('Canceled')
-                sys.exit(-1)
+        for name, branch in filter(name_branch_filter, listdir(path)):
+            update_item(resource, name, branch)
         print('')
+
+def retrieve(args):
+    logger.debug('retrieve')
+
+    print('Retrieving %s resource...' % args.resource)
+    print('-'*80)
+    print('\t%30s %30s' % (args.name, args.branch))
+    sys.stdout.flush()
+    registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
+    if not registry_uri:
+        print('Registry URI not available.')
+        sys.exit(-1)
+    uri = '%s/%s' % (registry_uri, args.name)
+    logger.debug(uri)
+    dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                           args.resource, args.name, args.branch)
+    logger.debug(dst)
+    out, err = execute('git clone -q -b %s %s %s' % (args.branch, uri, dst))
+    if 'already exists' in err:
+        logger.error('%s (%s) %s already exists.', args.name, args.branch, args.resource)
+    if 'Could not read from remote repository' in err:
+        logger.error('%s (%s) %s failed to be retrieved.', args.name, args.branch, args.resource)
+    if 'not found' in err:
+        logger.error('%s (%s) %s is not found.', args.name, args.branch, args.resource)
 
 def bootstrap(args):
     logger.debug('bootstrap')
+    execute('./build/%s/bootstrap.sh' % args.project, piped=False)
 
 def run(args):
     logger.debug('run')
+    execute('./build/%s/run.sh %s' % (args.project, args.module), piped=False)
 
 if __name__ == '__main__':
     common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
 
     parser = argparse.ArgumentParser(description='4i model-oriented programming compiler.', **common_options)
 
-    parser.add_argument('--verbose', '-v', choices=[x for x in LEVELS.keys()], default='error', help='Set a verbosity level.')
+    parser.add_argument('--verbose', '-v', choices=list(LEVELS), default='error', help='Set a verbosity level.')
     parser.add_argument('--levels', '-l', action='store_true', default=False, help='List all the verbosity levels.')
     parser.add_argument('--output', '-o', help='all the logging messages are redirected to the specified filename.')
     parser.add_argument('--debug', '-d', action='store_const', const='debug', dest='verbose', help='Display all the messages.')
@@ -83,10 +141,10 @@ if __name__ == '__main__':
     parser.add_argument('--error', '-e', action='store_const', const='error', dest='verbose', help='Only display the error messages.')
     parser.add_argument('--quiet', '-q', action='store_const', const='quiet', dest='verbose', help='Quiet level of verbosity only displaying the critical error messages.')
     parser.add_argument('--version', '-V', action='store_true', default=False, help='Show the version of 4i.')
-    parser.add_argument('--prefix', help='set the prefix path')
-    parser.add_argument('--resource_prefix', help='set the resource prefix path')
+    parser.add_argument('--prefix', help='Set the prefix path.')
+    parser.add_argument('--resource_prefix', help='Set the resource prefix path.')
 
-    subparsers = parser.add_subparsers(help='sub-command help')
+    subparsers = parser.add_subparsers(help='Sub-command help.')
 
     sp = subparsers.add_parser('build', help='Build a project xml file.', **common_options)
     sp.add_argument('project_xml', help='project xml file')
@@ -96,12 +154,24 @@ if __name__ == '__main__':
     sp.set_defaults(func=_list)
 
     sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
+    sp.add_argument('name', nargs='?', help='Name of the specific resource to update.')
+    sp.add_argument('branch', nargs='?', help='Branch of the resource to update.')
+    sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to retrieve.')
     sp.set_defaults(func=update)
 
+    sp = subparsers.add_parser('retrieve', help='Retrieve resources.', **common_options)
+    sp.add_argument('name', help='Name of the specific resource to retrieve.')
+    sp.add_argument('branch', nargs='?', help='Branch of the resource to retrieve.', default='master')
+    sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to retrieve.', default='module')
+    sp.set_defaults(func=retrieve)
+
     sp = subparsers.add_parser('bootstrap', help='Use the post-processing bootstrapping script.', **common_options)
+    sp.add_argument('project', help='Name of the project.')
     sp.set_defaults(func=bootstrap)
 
     sp = subparsers.add_parser('run', help='Use the post-processing running script.', **common_options)
+    sp.add_argument('project', help='Name of the project.')
+    sp.add_argument('module', help='Name of the module.')
     sp.set_defaults(func=run)
 
     if len(sys.argv) == 1:

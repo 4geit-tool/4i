@@ -134,13 +134,13 @@ endfunction
 # test if project node exists
 function test_project
   debug('test_project')
-  convert_version_to_branch(root->project)
   if !defined(root->project)
-    error("No project node found")
+    error("No project node found.")
   endif
   if !defined(project.name)
-    error("No attribute name found")
+    error("Project name is missing (project.name).")
   endif
+  convert_version_to_branch(root->project)
 endfunction
 
 # get repository depth
