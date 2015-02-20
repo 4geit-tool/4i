@@ -1,0 +1,8 @@
+.template 0
+
+load_file("$(get_resource_path(projectnode):)/script.gsl")
+load_file("$(global.forgeit_path:)/assets/requirements__txt.gsl")
+load_file("$(global.forgeit_path:)/assets/package__json.gsl")
+load_file("$(global.forgeit_path:)/assets/module__bootstrap__sh.gsl")
+
+.endtemplate

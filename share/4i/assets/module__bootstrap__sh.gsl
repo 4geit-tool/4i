@@ -1,6 +1,6 @@
 .template 1
-.log('create "$(module.name)" bootstrap.sh')
-.cached = cache_open("$(module.name)_bootstrap.sh")
+.log('create "$(projectnode.name)" bootstrap.sh')
+.cached = cache_open("$(projectnode.name)_bootstrap.sh")
 .
 #!/bin/bash
 
@@ -31,6 +31,6 @@ deactivate
 popd
 .
 .cache_close(cached)
-.chmod('+x', '$(global.cm_build_path:)/$(module.name)_bootstrap.sh')
+.chmod('+x', '$(global.cm_build_path:)/$(projectnode.name)_bootstrap.sh')
 .
 .endtemplate

@@ -143,6 +143,7 @@ function test_project
   if !defined(project.name)
     error("Project name is missing (project.name).")
   endif
+  directory.setcwd(global.forgeit_path)
   convert_version_to_branch(root->project)
 endfunction
 
@@ -360,7 +361,7 @@ function preload_module_dependencies
     load_file("pre.gsl")
     preload_protocol(module)
     load_extension_dependencies(module, "pre.gsl")
-    directory.setcwd(global.project_path)
+    directory.setcwd(global.forgeit_path)
     global.logcnt = "4i"
   endfor
 endfunction
@@ -382,10 +383,6 @@ function postload_module_dependencies
     load_file("utils.gsl")
     load_xml("abstractor.xml")
     # create_cm_directories()
-    load_file("$(get_resource_path(module):)/script.gsl")
-    load_file("$(global.forgeit_path:)/assets/requirements__txt.gsl")
-    load_file("$(global.forgeit_path:)/assets/package__json.gsl")
-    load_file("$(global.forgeit_path:)/assets/module__bootstrap__sh.gsl")
     load_file("build__sh.gsl")
     load_file("run__sh.gsl")
     abstractor__create_dirs(root->abstractor, global.cm_build_path)
@@ -396,7 +393,7 @@ function postload_module_dependencies
     postload_protocol(module)
     load_extension_dependencies(module, "post.gsl")
     load_file("post.gsl")
-    directory.setcwd(global.project_path)
+    directory.setcwd(global.forgeit_path)
     global.logcnt = "4i"
   endfor
 endfunction
@@ -416,14 +413,6 @@ function load_post_file
   load_file('$(global.project_path:)/post.gsl')
 endfunction
 
-function create_assets
-  debug('create_assets')
-  load_file("$(global.forgeit_path:)/assets/bootstrap__sh.gsl")
-  load_file("$(global.forgeit_path:)/assets/run__sh.gsl")
-  load_file("$(global.forgeit_path:)/assets/command__sh.gsl")
-  file__copy_files(project, '', global.build_path)
-endfunction
-
 # print global variables
 function print_variables
   log("---")
@@ -434,17 +423,6 @@ function print_variables
   log("$("project_path"%15s): [$(global.project_path:)]")
   log("$("build_path"%15s): [$(global.build_path:)]")
   log("$("cache_path"%15s): [$(global.cache_path:)]")
-  log("---")
-endfunction
-
-# ready message
-function ready
-  log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
-  log("$("bootstrap"%10s): [4i bootstrap $(project_name:)]")
-  log("$("run"%10s): [4i run $(project_name:)]")
-  for project.module as m
-    log("$(m.name%10s): [4i command $(project_name:) $(m.name:)]")
-  endfor
   log("---")
 endfunction
 

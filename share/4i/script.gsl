@@ -40,13 +40,10 @@ log("---")
 load_pre_file()
 check_protocol()
 preload_protocol()
-check_compatibility()
 load_module_dependencies()
 log("---")
-create_assets()
 postload_protocol()
 load_post_file()
-ready()
 
 save root
 

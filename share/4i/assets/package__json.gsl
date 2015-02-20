@@ -17,7 +17,7 @@
 .
 .if defined(project.node_version)
 .
-. log('create "$(module.name)" package.json')
+. log('create "$(projectnode.name)" package.json')
 . cached = cache_open("package.json")
 .
 {
@@ -71,7 +71,7 @@
 .   add_requirements(e)
 . endfor
 .
-. add_requirements(module)
+. add_requirements(projectnode)
 . add_requirements()
 .
   },
@@ -81,7 +81,7 @@
 .   add_requirements(e, 'dev')
 . endfor
 .
-. add_requirements(module, 'dev')
+. add_requirements(projectnode, 'dev')
 . add_requirements(project, 'dev')
 .
   },

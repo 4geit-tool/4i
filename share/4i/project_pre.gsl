@@ -1,0 +1,5 @@
+.template 0
+
+check_compatibility()
+
+.endtemplate

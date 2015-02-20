@@ -16,14 +16,14 @@ $(conditional__ifdef_else_empty(r.version, '$(r.operator?">=")$(r.version)'))
 
 if defined(project.python_version)
 
-  log('create "$(module.name)" requirements.txt')
-  cached = cache_open("$(module.name)_requirements.txt")
+  log('create "$(projectnode.name)" requirements.txt')
+  cached = cache_open("$(projectnode.name)_requirements.txt")
 
   for project.extension as e
     add_requirements(e)
   endfor
 
-  add_requirements(module)
+  add_requirements(projectnode)
   add_requirements()
 
   cache_close(cached)
