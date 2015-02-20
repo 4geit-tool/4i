@@ -65,18 +65,18 @@ def _list(args):
     logger.debug('_list')
 
     for resource in RESOURCES:
-        dashes = (30*2+1)*'-'
-        print('%30s' % resource.upper())
+        dashes = (60+20+1)*'-'
+        print('%60s' % resource.upper())
         print(dashes)
-        print('%30s %30s' % ('Name', 'Branch'))
+        print('%60s %20s' % ('Name', 'Branch'))
         print(dashes)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in listdir(path):
-            print('%30s %30s' % (name, branch))
+            print('%60s %20s' % (name, branch))
         print('')
 
 def update_item(resource, name, branch):
-    print('\t%30s %30s' % (name, branch))
+    print('%60s %20s' % (name, branch))
     sys.stdout.flush()
     out, err = execute('git -C %s/%s/%s_%s pull -q' % \
                        (os.environ['FORGEIT_RESOURCE_PREFIX'],
@@ -91,7 +91,7 @@ def update(args):
     
     for resource in filter(resource_filter, RESOURCES):
         print('Updating %s resource...' % resource)
-        print('-'*80)
+        print('-'*(80+1))
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in filter(name_branch_filter, listdir(path)):
             update_item(resource, name, branch)
@@ -101,8 +101,8 @@ def retrieve(args):
     logger.debug('retrieve')
 
     print('Retrieving %s resource...' % args.resource)
-    print('-'*80)
-    print('\t%30s %30s' % (args.name, args.branch))
+    print('-'*(80+1))
+    print('%60s %20s' % (args.name, args.branch))
     sys.stdout.flush()
     registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
     if not registry_uri:
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(help='Sub-command help.')
 
     sp = subparsers.add_parser('build', help='Build a project xml file.', **common_options)
-    sp.add_argument('project_xml', help='Project xml file.')
+    sp.add_argument('project_xml', nargs='?', help='Project xml file.', default='project.xml')
     sp.set_defaults(func=build)
 
     sp = subparsers.add_parser('list', help='List the retrieved resources.', **common_options)
