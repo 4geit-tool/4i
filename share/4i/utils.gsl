@@ -225,7 +225,8 @@ function load_xml_dependencies
   debug('load_xml_dependencies')
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.branch)
-      my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
+      # my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
+      my.xml_filename = "$(get_resource_path(i):)/$(r.name:).xml"
       debug(my.xml_filename)
       if file.exists(my.xml_filename)
         my.tmp = XML.new()
@@ -237,6 +238,8 @@ function load_xml_dependencies
           i.branch = my.tmp->$(r.name:).branch
         endif
         merge_two_nodes(i, my.tmp->$(r.name:))
+      else
+        error('$(i.name:) $(r.name:) does not exist.')
       endif
     endfor
   endfor
@@ -247,27 +250,17 @@ function get_copy_load_nested_dependencies
   debug('get_copy_load_nested_dependencies')
   my.count = 0
   my.end = 0
-  while !my.end
+  while !my.end & my.count < 10
     my.end = 1
     for root->forgeit.resource as r
       for project.$(r.name) as i where !defined(i.branch)
         my.end = 0
       endfor
     endfor
-    debug("save root_$(my.count)_1")
-    project.save("$(global.build_path:)/root_$(my.count)_1.xml")
     convert_required_version_to_required_branch()
-    debug("save root_$(my.count)_2")
-    project.save("$(global.build_path:)/root_$(my.count)_2.xml")
     retrieve_resources()
-    debug("save root_$(my.count)_3")
-    project.save("$(global.build_path:)/root_$(my.count)_3.xml")
     load_xml_dependencies()
-    debug("save root_$(my.count)_4")
-    project.save("$(global.build_path:)/root_$(my.count)_4.xml")
     copy_nested_dependencies()
-    debug("save root_$(my.count)_5")
-    project.save("$(global.build_path:)/root_$(my.count)_5.xml")
     my.count += 1
   endwhile
 endfunction
@@ -300,7 +293,7 @@ function load_core_dependencies(ctx)
   for project.core as c1
     for my.ctx.core as c2 where c1.name = c2.name & c1.branch = c2.required_branch
       log("Loading $(c1.name:) core ($(c1.branch:))")
-      load_file("$(get_resource_path(c1):)/$(c1.name:).gsl")
+      load_file("$(get_resource_path(c1):)/core.gsl")
     endfor
   endfor
 endfunction
@@ -315,6 +308,20 @@ function check_protocol
       protocol__check(i, root, '$(i.name:)][')
     endfor
   endfor
+endfunction
+
+# preload protocol
+function preload_protocol(ctx)
+  debug('preload_protocol')
+  my.ctx ?= root->forgeit
+  protocol__preload(my.ctx)
+endfunction
+
+# postload protocol
+function postload_protocol(ctx)
+  debug('postload_protocol')
+  my.ctx ?= root->forgeit
+  protocol__postload(my.ctx)
 endfunction
 
 # load extension dependencies
@@ -334,13 +341,15 @@ function create_cm_directories
 endfunction
 
 # load module dependencies
-function load_module_dependencies
+function preload_module_dependencies
   debug('load_module_dependencies')
   for project.module
     global.logcnt = module.name
-    log("Loading $(module.name:) module ($(module.branch:))")
-    global.cm_build_path = "$(global.build_path:)$(module.name:)"
-    global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
+    log("Pre-loading $(module.name:) module ($(module.branch:))")
+    # global.cm_build_path = "$(global.build_path:)$(module.name:)"
+    # global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
+    global.cm_build_path = "$(global.build_path:)"
+    global.cm_cache_path = "$(global.cache_path:)"
     log("---")
     log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
     log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
@@ -348,9 +357,31 @@ function load_module_dependencies
     load_core_dependencies(module)
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
+    load_file("pre.gsl")
+    preload_protocol(module)
     load_extension_dependencies(module, "pre.gsl")
+    directory.setcwd(global.project_path)
+    global.logcnt = "4i"
+  endfor
+endfunction
+
+# postload module dependencies
+function postload_module_dependencies
+  debug('postload_module_dependencies')
+  for project.module
+    global.logcnt = module.name
+    log("Post-loading $(module.name:) module ($(module.branch:))")
+    global.cm_build_path = "$(global.build_path:)"
+    global.cm_cache_path = "$(global.cache_path:)"
+    log("---")
+    log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
+    log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
+    log("---")
+    load_core_dependencies(module)
+    directory.setcwd(get_resource_path(module))
+    load_file("utils.gsl")
     load_xml("abstractor.xml")
-    create_cm_directories()
+    # create_cm_directories()
     load_file("$(get_resource_path(module):)/script.gsl")
     load_file("$(global.forgeit_path:)/assets/requirements__txt.gsl")
     load_file("$(global.forgeit_path:)/assets/package__json.gsl")
@@ -362,10 +393,19 @@ function load_module_dependencies
     if defined(root->abstractor)
       delete root->abstractor
     endif
-    load_extension_dependencies(module, "post.gsl") # DO FILES LOCATION GOOD ???
+    postload_protocol(module)
+    load_extension_dependencies(module, "post.gsl")
+    load_file("post.gsl")
     directory.setcwd(global.project_path)
     global.logcnt = "4i"
   endfor
+endfunction
+
+# load module dependencies
+function load_module_dependencies
+  debug('load_module_dependencies')
+  preload_module_dependencies()
+  postload_module_dependencies()
 endfunction
 
 function load_pre_file

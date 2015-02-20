@@ -4,7 +4,7 @@ function configure
   # [gsl].escape = '!'
   # [gsl].substitute = '@('
   [gsl].shuffle = 0
-  diag.console_set_mode(2)
+  diag.console_set_mode(0)
 endfunction
 
 function set_variables
@@ -14,8 +14,8 @@ function set_variables
   global.forgeit_path = directory.resolve("$(env.get('FORGEIT_PREFIX'):)/share/4i")
   global.project_path = directory.resolve('.')
   global.project_name = project.name?""
-  global.build_path = directory.resolve("$(global.project_path:)build/$(project_name:)")
-  global.cache_path = directory.resolve("$(global.project_path:)build/.cache/$(project_name:)")
+  global.build_path = directory.resolve("$(global.project_path:)build")
+  global.cache_path = directory.resolve("$(global.project_path:)build/.cache")
 endfunction
 
 configure()
@@ -25,37 +25,26 @@ gsl from "$(global.forgeit_path:)/utils.gsl"
 
 test_project()
 print_variables()
-debug("save root_a")
-project.save("$(global.build_path:)/root_a.xml")
 load_config()
-debug("save root_b")
-project.save("$(global.build_path:)/root_b.xml")
 copy_dependencies()
-debug("save root_c")
-project.save("$(global.build_path:)/root_c.xml")
 create_resource_directories()
-debug("save root_d")
-project.save("$(global.build_path:)/root_d.xml")
 create_project_directories()
-debug("save root_e")
-project.save("$(global.build_path:)/root_e.xml")
 get_copy_load_nested_dependencies()
-debug("save root_f")
-project.save("$(global.build_path:)/root_f.xml")
 # update_resources()
-debug("save root_g")
-project.save("$(global.build_path:)/root_g.xml")
 log("---")
 load_core_dependencies()
+cache__init()
 log("---")
 inclusion__process()
 log("---")
 load_pre_file()
 check_protocol()
+preload_protocol()
 check_compatibility()
 load_module_dependencies()
 log("---")
 create_assets()
+postload_protocol()
 load_post_file()
 ready()
 

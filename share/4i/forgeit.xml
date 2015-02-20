@@ -36,84 +36,82 @@
 
   <bug>recusive call of run.sh if bad module name</bug>
   
-  <protocol>
-    <node name="project">
+  <node name="project">
+    <attribute name="name" required="True"/>
+    <attribute name="vendor"/>
+    <attribute name="vendor_email"/>
+    <attribute name="branch" required="True"/>
+    <attribute name="version"/>
+    <attribute name="license"/>
+    <attribute name="description"/>
+    <node name="todo" number="*"/>
+    <node name="bug" number="*"/>
+    <node name="author" number="*">
       <attribute name="name" required="True"/>
-      <attribute name="vendor"/>
-      <attribute name="vendor_email"/>
-      <attribute name="branch" required="True"/>
-      <attribute name="version"/>
-      <attribute name="license"/>
-      <attribute name="description"/>
-      <node name="todo" number="*"/>
-      <node name="bug" number="*"/>
-      <node name="author" number="*">
-	<attribute name="name" required="True"/>
-	<attribute name="email"/>
-      </node>
-      <node name="keyword" number="*">
-	<attribute name="value" required="True"/>
-      </node>
-      <group id="requires">
-	<node name="require" number="*">
-	  <attribute name="env"/>
-	  <attribute name="dev"/>
-	  <attribute name="name" required="True"/>
-	  <attribute name="version"/>
-	  <attribute name="variable"/>
-	</node> <!-- !require -->
-      </group>
-      <node name="core" number="*">
-	<attribute name="name" required="True"/>
-	<attribute name="required_branch" required="True"/>
-	<attribute name="branch" required="True"/>
-	<attribute name="required_version"/>
-	<attribute name="version"/>
-	<node name="protocol"/>
-      </node> <!-- !core -->
-      <node name="module" number="*">
-	<attribute name="name" required="True"/>
-	<attribute name="required_branch" required="True"/>
-	<attribute name="branch" required="True"/>
-	<attribute name="required_version"/>
-	<attribute name="version"/>
-	<group ref="requires"/>
-	<node name="protocol"/>
-      </node> <!-- !module -->
-      <node name="extension" number="*">
-	<attribute name="name" required="True"/>
-	<attribute name="required_branch" required="True"/>
-	<attribute name="branch" required="True"/>
-	<attribute name="required_version"/>
-	<attribute name="version"/>
-	<group ref="requires"/>
-	<node name="compatible">
-	  <node name="module" number="*">
-	    <attribute name="name" required="True"/>
-	    <attribute name="required_branch"/>
-	    <attribute name="required_version"/>
-	  </node> <!-- !module -->
-	</node> <!-- !compatible -->
-	<node name="urls"/>
-	<node name="views"/>
-	<node name="build"/>
-	<node name="protocol"/>
-      </node> <!-- !extension -->
-      <group id="files">
-	<node name="file" number="*">
-	  <attribute name="name" required="True"/>
-	  <node name="image" number="*">
-	    <attribute name="name" required="True"/>
-	    <attribute name="resize"/>
-	  </node> <!-- !image -->
-	</node> <!-- !file -->
-      </group> <!-- !files -->
-      <group id="dirs">
-	<node name="dir" number="*">
-	  <group ref="files"/>
-	  <group ref="dirs"/>
-	</node> <!-- !dir -->
-      </group> <!-- !dirs -->
+      <attribute name="email"/>
     </node>
-  </protocol>
+    <node name="keyword" number="*">
+      <attribute name="value" required="True"/>
+    </node>
+    <group id="requires">
+      <node name="require" number="*">
+	<attribute name="env"/>
+	<attribute name="dev"/>
+	<attribute name="name" required="True"/>
+	<attribute name="version"/>
+	<attribute name="variable"/>
+      </node> <!-- !require -->
+    </group>
+    <node name="core" number="*">
+      <attribute name="name" required="True"/>
+      <attribute name="required_branch" required="True"/>
+      <attribute name="branch" required="True"/>
+      <attribute name="required_version"/>
+      <attribute name="version"/>
+      <node name="protocol"/>
+    </node> <!-- !core -->
+    <node name="module" number="*">
+      <attribute name="name" required="True"/>
+      <attribute name="required_branch" required="True"/>
+      <attribute name="branch" required="True"/>
+      <attribute name="required_version"/>
+      <attribute name="version"/>
+      <group ref="requires"/>
+      <node name="protocol"/>
+    </node> <!-- !module -->
+    <node name="extension" number="*">
+      <attribute name="name" required="True"/>
+      <attribute name="required_branch" required="True"/>
+      <attribute name="branch" required="True"/>
+      <attribute name="required_version"/>
+      <attribute name="version"/>
+      <group ref="requires"/>
+      <node name="compatible">
+	<node name="module" number="*">
+	  <attribute name="name" required="True"/>
+	  <attribute name="required_branch"/>
+	  <attribute name="required_version"/>
+	</node> <!-- !module -->
+      </node> <!-- !compatible -->
+      <node name="urls"/>
+      <node name="views"/>
+      <node name="build"/>
+      <node name="protocol"/>
+    </node> <!-- !extension -->
+    <group id="files">
+      <node name="file" number="*">
+	<attribute name="name" required="True"/>
+	<node name="image" number="*">
+	  <attribute name="name" required="True"/>
+	  <attribute name="resize"/>
+	</node> <!-- !image -->
+      </node> <!-- !file -->
+    </group> <!-- !files -->
+    <group id="dirs">
+      <node name="dir" number="*">
+	<group ref="files"/>
+	<group ref="dirs"/>
+      </node> <!-- !dir -->
+    </group> <!-- !dirs -->
+  </node>
 </forgeit>
