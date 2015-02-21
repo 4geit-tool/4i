@@ -292,6 +292,13 @@ function load_core_dependencies(ctx)
   endfor
 endfunction
 
+# precheckload protocol
+function precheckload_protocol(ctx)
+  debug('precheckload_protocol')
+  my.ctx ?= root->forgeit
+  protocol__precheckload(my.ctx)
+endfunction
+
 # check protocol
 function check_protocol
   debug('check_protocol')
@@ -303,10 +310,14 @@ function check_protocol
     my.count += 1
   endwhile
 
+  precheckload_protocol(root->forgeit)
   protocol__check(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i
       debug('check $(i.name:) $(r.name:) protocol')
+      directory.setcwd(get_resource_path(i))
+      precheckload_protocol(i)
+      directory.setcwd(global.forgeit_path)
       protocol__check(i, root, '$(i.name:)][')
     endfor
   endfor
