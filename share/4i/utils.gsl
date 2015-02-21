@@ -83,13 +83,6 @@ function create_resource_directories
   endfor
 endfunction
 
-# create project directories
-function create_project_directories
-  debug('create_project_directories')
-  directory.create(global.build_path)
-  directory.create(global.cache_path)
-endfunction
-
 function get_resource_path(item)
   if !defined(my.item.required_branch)
     error('$(my.item.name:) $(name(my.item):) does not define a required_branch attribute.')
@@ -210,7 +203,7 @@ function copy_nested_dependencies
       convert_required_version_to_required_branch_in_ctx(i)
       for root->forgeit.resource as rj
         for i.$(rj.name) as j where !defined(project->$(rj.name)(name=j.name & branch=j.required_branch))
-          copy j to project
+          copy j to project before i
         endfor
       endfor
     endfor
@@ -302,6 +295,14 @@ endfunction
 # check protocol
 function check_protocol
   debug('check_protocol')
+
+  my.count = 0
+  while my.count < 10
+    reference__process('node', 'node', root)
+    reference__process('group', 'group', root)
+    my.count += 1
+  endwhile
+
   protocol__check(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i
@@ -375,9 +376,6 @@ function postload_module_dependencies
     global.cm_build_path = "$(global.build_path:)"
     global.cm_cache_path = "$(global.cache_path:)"
     log("---")
-    # log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
-    # log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
-    # log("---")
 
     global.logcnt = module.name
     load_core_dependencies(module)
@@ -385,6 +383,7 @@ function postload_module_dependencies
     load_file("utils.gsl")
     load_xml("abstractor.xml")
     # create_cm_directories()
+    load_file("script.gsl")
     load_file("build__sh.gsl")
     load_file("run__sh.gsl")
     abstractor__create_dirs(root->abstractor, global.cm_build_path)
@@ -398,13 +397,6 @@ function postload_module_dependencies
     directory.setcwd(global.forgeit_path)
     global.logcnt = "4i"
   endfor
-endfunction
-
-# load module dependencies
-function load_module_dependencies
-  debug('load_module_dependencies')
-  preload_module_dependencies()
-  postload_module_dependencies()
 endfunction
 
 function load_pre_file
@@ -425,6 +417,18 @@ function print_variables
   log("$("project_path"%15s): [$(global.project_path:)]")
   log("$("build_path"%15s): [$(global.build_path:)]")
   log("$("cache_path"%15s): [$(global.cache_path:)]")
+  log("---")
+endfunction
+
+function ready
+  root.save('$(build_path:)/root.xml')
+
+  log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
+  log("$("bootstrap"%10s): [4i bootstrap $(project_name:)]")
+  log("$("run"%10s): [4i run $(project_name:)]")
+  for project.module as m
+    log("$(m.name%10s): [4i command $(project_name:) $(m.name:)]")
+  endfor
   log("---")
 endfunction
 

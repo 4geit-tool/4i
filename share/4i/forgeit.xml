@@ -36,28 +36,27 @@
 
   <bug>recusive call of run.sh if bad module name</bug>
 
-  <node name="project" pre="project_pre.gsl" post="project_post.gsl" post_end="project_post_end.gsl">
+  <node name="project">
     <attribute name="name" required="True"/>
-    <attribute name="vendor"/>
-    <attribute name="vendor_email"/>
-    <attribute name="branch" required="True"/>
-    <attribute name="version"/>
-    <attribute name="license"/>
-    <attribute name="description"/>
+    <node name="node" number="*">
+      <attribute name="name" required="True"/>
+      <attribute name="number"/>
+      <attribute name="pre"/>
+      <attribute name="post"/>
+      <attribute name="post_end"/>
+      <attribute name="dst"/>
+      <attribute name="binary"/>
+      <node name="attribute" number="*">
+	<attribute name="name" required="True"/>
+	<attribute name="required"/>
+      </node>
+      <node ref=":node"/>
+      <node name="group" number="*">
+      	<attribute name="name" required="True"/>
+      </node>
+    </node>
     <node name="todo" number="*"/>
     <node name="bug" number="*"/>
-    <node name="author" number="*">
-      <attribute name="name" required="True"/>
-      <attribute name="email"/>
-    </node> <!-- !author -->
-    <node name="keyword" number="*">
-      <attribute name="value" required="True"/>
-    </node> <!-- !keyword -->
-    <node name="reference" number="*">
-      <attribute name="src" required="True"/>
-      <attribute name="dst"/>
-      <attribute name="ctx"/>
-    </node> <!-- !reference -->
     <node name="require" number="*">
       <attribute name="env"/>
       <attribute name="dev"/>
@@ -71,24 +70,27 @@
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
-      <node name="protocol"/>
-    </node> <!-- !core -->
-    <node name="module" number="*" post="module_post.gsl">
+      <node ref=":todo"/>
+      <node ref=":bug"/>
+      <node ref=":node"/>
+    </node>
+    <node name="module" number="*">
       <attribute name="name" required="True"/>
       <attribute name="required_branch" required="True"/>
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
+      <node ref=":todo"/>
+      <node ref=":bug"/>
       <node ref=":require"/>
-      <node name="protocol"/>
-    </node> <!-- !module -->
+      <node ref=":node"/>
+    </node>
     <node name="extension" number="*">
       <attribute name="name" required="True"/>
       <attribute name="required_branch" required="True"/>
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
-      <node ref=":require"/>
       <node name="compatible">
 	<node name="module" number="*">
 	  <attribute name="name" required="True"/>
@@ -99,23 +101,10 @@
       <node name="urls"/>
       <node name="views"/>
       <node name="build"/>
-      <node name="protocol"/>
-    </node> <!-- !extension -->
-    <node name="file" number="*">
-      <attribute name="name" required="True"/>
-      <node name="image" number="*">
-	<attribute name="name" required="True"/>
-	<attribute name="resize"/>
-      </node> <!-- !image -->
-    </node> <!-- !file -->
-    <node name="output" number="*">
-      <attribute name="name" required="True"/>
-    </node> <!-- !output -->
-    <node name="dir" number="*" pre="dir_pre.gsl" post="dir_post.gsl">
-      <attribute name="name" required="True"/>
-      <node ref=":file"/>
-      <node ref=":output"/>
-      <node ref=":dir"/>
-    </node> <!-- !dir -->
-  </node> <!-- !project -->
+      <node ref=":todo"/>
+      <node ref=":bug"/>
+      <node ref=":require"/>
+      <node ref=":node"/>
+    </node>
+  </node>
 </forgeit>

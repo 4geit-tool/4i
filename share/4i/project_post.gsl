@@ -1,8 +1,0 @@
-.template 0
-
-load_file("$(global.forgeit_path:)/assets/bootstrap__sh.gsl")
-load_file("$(global.forgeit_path:)/assets/run__sh.gsl")
-load_file("$(global.forgeit_path:)/assets/command__sh.gsl")
-# file__copy_files(project, '', global.build_path)
-
-.endtemplate

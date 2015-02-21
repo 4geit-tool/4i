@@ -1,7 +1,0 @@
-.template 0
-
-if defined(projectnode.path)
-  directory.create(build_path + projectnode.path)
-endif
-
-.endtemplate
