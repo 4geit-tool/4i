@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 
 <forgeit>
-  <zen>The motivation comes in setting up long and short term objectives.</zen>
-  <zen>The first thing you do in your day is to start a first pomodoro to realize whatever you need to do before working.</zen>
-  <zen>Then begin working with the next pomodoros.</zen>
-  <zen>Ajust the break times accordingly to do whatever else needed during your day.</zen>
-  <zen>Avoid as much as possible internal and external interuptions.</zen>
+  <zen name="Motivation">The motivation comes in setting up long and short term objectives.</zen>
+  <zen name="Inception">The first thing you do in your day is to start a first pomodoro to realize whatever you need to do before working.</zen>
+  <zen name="Construction">Then begin working with the next pomodoros.</zen>
+  <zen name="Breaks">Ajust the break times accordingly to do whatever else needed during your day.</zen>
+  <zen name="Interuptions">Avoid as much as possible internal and external interuptions.</zen>
 
   <resource name="core" registry_uri="http://github.com/4geit-core"/>
   <resource name="module" registry_uri="http://github.com/4geit-module"/>
@@ -35,7 +35,7 @@
   <todo>gitify output</todo>
 
   <bug>recusive call of run.sh if bad module name</bug>
-  
+
   <node name="project" pre="project_pre.gsl" post="project_post.gsl" post_end="project_post_end.gsl">
     <attribute name="name" required="True"/>
     <attribute name="vendor"/>
@@ -49,19 +49,22 @@
     <node name="author" number="*">
       <attribute name="name" required="True"/>
       <attribute name="email"/>
-    </node>
+    </node> <!-- !author -->
     <node name="keyword" number="*">
       <attribute name="value" required="True"/>
-    </node>
-    <group id="requires">
-      <node name="require" number="*">
-	<attribute name="env"/>
-	<attribute name="dev"/>
-	<attribute name="name" required="True"/>
-	<attribute name="version"/>
-	<attribute name="variable"/>
-      </node> <!-- !require -->
-    </group>
+    </node> <!-- !keyword -->
+    <node name="reference" number="*">
+      <attribute name="src" required="True"/>
+      <attribute name="dst"/>
+      <attribute name="ctx"/>
+    </node> <!-- !reference -->
+    <node name="require" number="*">
+      <attribute name="env"/>
+      <attribute name="dev"/>
+      <attribute name="name" required="True"/>
+      <attribute name="version"/>
+      <attribute name="variable"/>
+    </node> <!-- !require -->
     <node name="core" number="*">
       <attribute name="name" required="True"/>
       <attribute name="required_branch" required="True"/>
@@ -76,7 +79,7 @@
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
-      <group ref="requires"/>
+      <node ref=":require"/>
       <node name="protocol"/>
     </node> <!-- !module -->
     <node name="extension" number="*">
@@ -85,7 +88,7 @@
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
-      <group ref="requires"/>
+      <node ref=":require"/>
       <node name="compatible">
 	<node name="module" number="*">
 	  <attribute name="name" required="True"/>
@@ -98,20 +101,21 @@
       <node name="build"/>
       <node name="protocol"/>
     </node> <!-- !extension -->
-    <group id="files">
-      <node name="file" number="*">
+    <node name="file" number="*">
+      <attribute name="name" required="True"/>
+      <node name="image" number="*">
 	<attribute name="name" required="True"/>
-	<node name="image" number="*">
-	  <attribute name="name" required="True"/>
-	  <attribute name="resize"/>
-	</node> <!-- !image -->
-      </node> <!-- !file -->
-    </group> <!-- !files -->
-    <group id="dirs">
-      <node name="dir" number="*">
-	<group ref="files"/>
-	<group ref="dirs"/>
-      </node> <!-- !dir -->
-    </group> <!-- !dirs -->
+	<attribute name="resize"/>
+      </node> <!-- !image -->
+    </node> <!-- !file -->
+    <node name="output" number="*">
+      <attribute name="name" required="True"/>
+    </node> <!-- !output -->
+    <node name="dir" number="*" pre="dir_pre.gsl" post="dir_post.gsl">
+      <attribute name="name" required="True"/>
+      <node ref=":file"/>
+      <node ref=":output"/>
+      <node ref=":dir"/>
+    </node> <!-- !dir -->
   </node> <!-- !project -->
 </forgeit>

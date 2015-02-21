@@ -45,6 +45,4 @@ log("---")
 postload_protocol()
 load_post_file()
 
-save root
-
 .endtemplate

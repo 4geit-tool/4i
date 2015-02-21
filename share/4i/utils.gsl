@@ -345,16 +345,17 @@ endfunction
 function preload_module_dependencies
   debug('load_module_dependencies')
   for project.module
-    global.logcnt = module.name
     log("Pre-loading $(module.name:) module ($(module.branch:))")
     # global.cm_build_path = "$(global.build_path:)$(module.name:)"
     # global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
     global.cm_build_path = "$(global.build_path:)"
     global.cm_cache_path = "$(global.cache_path:)"
     log("---")
-    log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
-    log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
-    log("---")
+    # log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
+    # log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
+    # log("---")
+    
+    global.logcnt = module.name
     load_core_dependencies(module)
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
@@ -370,14 +371,15 @@ endfunction
 function postload_module_dependencies
   debug('postload_module_dependencies')
   for project.module
-    global.logcnt = module.name
     log("Post-loading $(module.name:) module ($(module.branch:))")
     global.cm_build_path = "$(global.build_path:)"
     global.cm_cache_path = "$(global.cache_path:)"
     log("---")
-    log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
-    log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
-    log("---")
+    # log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
+    # log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
+    # log("---")
+
+    global.logcnt = module.name
     load_core_dependencies(module)
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
