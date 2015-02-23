@@ -166,6 +166,9 @@ endfunction
 
 # update resources
 function update_resources
+  if !defined(env.get("FORGEIT_UPDATE"))
+    return
+  endif
   debug('update_resources')
   for root->forgeit.resource as r
     for project.$(r.name) as i
@@ -219,7 +222,6 @@ function load_xml_dependencies
   debug('load_xml_dependencies')
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.branch)
-      # my.xml_filename = "$(get_resource_path(i):)/$(i.name:).xml"
       my.xml_filename = "$(get_resource_path(i):)/$(r.name:).xml"
       debug(my.xml_filename)
       if file.exists(my.xml_filename)
@@ -287,21 +289,16 @@ function load_core_dependencies(ctx)
   for project.core as c1
     for my.ctx.core as c2 where c1.name = c2.name & c1.branch = c2.required_branch
       log("Loading $(c1.name:) core ($(c1.branch:))")
+      directory.setcwd(get_resource_path(c1))
       load_file("$(get_resource_path(c1):)/core.gsl")
+      directory.setcwd(global.forgeit_path)
     endfor
   endfor
 endfunction
 
-# precheckload protocol
-function precheckload_protocol(ctx)
-  debug('precheckload_protocol')
-  my.ctx ?= root->forgeit
-  protocol__precheckload(my.ctx)
-endfunction
-
-# check protocol
-function check_protocol
-  debug('check_protocol')
+# check and load protocol
+function check_load_protocol
+  debug('check_load_protocol')
 
   my.count = 0
   while my.count < 10
@@ -310,82 +307,48 @@ function check_protocol
     my.count += 1
   endwhile
 
-  precheckload_protocol(root->forgeit)
-  protocol__check(root->forgeit)
+  protocol__combine(root->forgeit)
+
   for root->forgeit.resource as r
     for project.$(r.name) as i
-      debug('check $(i.name:) $(r.name:) protocol')
+      debug('combine $(i.name:) $(r.name:) protocol')
       directory.setcwd(get_resource_path(i))
-      precheckload_protocol(i)
+      protocol__combine(i)
       directory.setcwd(global.forgeit_path)
-      protocol__check(i, root, '$(i.name:)][')
     endfor
   endfor
-endfunction
 
-# preload protocol
-function preload_protocol(ctx)
-  debug('preload_protocol')
-  my.ctx ?= root->forgeit
-  protocol__preload(my.ctx)
-endfunction
-
-# postload protocol
-function postload_protocol(ctx)
-  debug('postload_protocol')
-  my.ctx ?= root->forgeit
-  protocol__postload(my.ctx)
-endfunction
-
-# load extension dependencies
-function load_extension_dependencies(resource, file)
-  debug('load_extension_dependencies')
-  for project.extension where (defined(extension->compatible) & defined(extension->compatible->$(name(my.resource))(name=my.resource.name & required_branch=my.resource.branch))) | !defined(extension->compatible)
-    debug("Loading $(extension.name:) extension ($(extension.branch:)) $(my.file:)")
-    load_file("$(get_resource_path(extension):)/$(my.file:)")
-  endfor
-endfunction
-
-# create current module directories
-function create_cm_directories
-  debug('create_cm_directories')
-  directory.create(global.cm_build_path)
-  directory.create(global.cm_cache_path)
+  protocol__load_pre_check()
+  protocol__check()
 endfunction
 
 # load module dependencies
-function preload_module_dependencies
+function load_module_dependencies
   debug('load_module_dependencies')
+
+  protocol__load_pre()
+
   for project.module
     log("Pre-loading $(module.name:) module ($(module.branch:))")
-    # global.cm_build_path = "$(global.build_path:)$(module.name:)"
-    # global.cm_cache_path = "$(global.cache_path:)$(module.name:)"
-    global.cm_build_path = "$(global.build_path:)"
-    global.cm_cache_path = "$(global.cache_path:)"
+    global.cm_build_path = global.build_path
+    global.cm_cache_path = global.cache_path
     log("---")
-    # log("$("cm_build_path"%15s): [$(global.cm_build_path:)]")
-    # log("$("cm_cache_path"%15s): [$(global.cm_cache_path:)]")
-    # log("---")
     
     global.logcnt = module.name
     load_core_dependencies(module)
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
     load_file("pre.gsl")
-    preload_protocol(module)
-    load_extension_dependencies(module, "pre.gsl")
     directory.setcwd(global.forgeit_path)
     global.logcnt = "4i"
   endfor
-endfunction
 
-# postload module dependencies
-function postload_module_dependencies
-  debug('postload_module_dependencies')
+  protocol__load_post()
+
   for project.module
     log("Post-loading $(module.name:) module ($(module.branch:))")
-    global.cm_build_path = "$(global.build_path:)"
-    global.cm_cache_path = "$(global.cache_path:)"
+    global.cm_build_path = global.build_path
+    global.cm_cache_path = global.cache_path
     log("---")
 
     global.logcnt = module.name
@@ -393,7 +356,6 @@ function postload_module_dependencies
     directory.setcwd(get_resource_path(module))
     load_file("utils.gsl")
     load_xml("abstractor.xml")
-    # create_cm_directories()
     load_file("script.gsl")
     load_file("build__sh.gsl")
     load_file("run__sh.gsl")
@@ -402,8 +364,6 @@ function postload_module_dependencies
     if defined(root->abstractor)
       delete root->abstractor
     endif
-    postload_protocol(module)
-    load_extension_dependencies(module, "post.gsl")
     load_file("post.gsl")
     directory.setcwd(global.forgeit_path)
     global.logcnt = "4i"
