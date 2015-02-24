@@ -9,8 +9,6 @@
 
   <resource name="core" registry_uri="http://github.com/4geit-core"/>
   <resource name="module" registry_uri="http://github.com/4geit-module"/>
-  <resource name="extension" registry_uri="http://github.com/4geit-extension"/>
-  <resource name="project" registry_uri="http://github.com/4geit-project"/>
 
   <core name="reference" required_branch="master"/>
   <core name="inclusion" required_branch="master"/>
@@ -48,6 +46,7 @@
       <attribute name="post_end"/>
       <attribute name="dst"/>
       <attribute name="binary"/>
+      <attribute name="debug"/>
       <node name="attribute" number="*">
 	<attribute name="name" required="True"/>
 	<attribute name="required"/>

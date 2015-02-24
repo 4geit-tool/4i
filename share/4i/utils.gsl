@@ -371,7 +371,9 @@ function load_module_dependencies
     global.logcnt = "4i"
   endfor
 
+  global.debug = 1
   protocol__load_post()
+  global.debug = 0
 
   for project.module
     log("Post-loading $(module.name:) module ($(module.branch:))")

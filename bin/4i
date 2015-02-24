@@ -4,7 +4,7 @@ import argparse, subprocess, sys, os, logging
 from collections import OrderedDict
 
 VERSION = "master"
-RESOURCES = ['core', 'module', 'extension']
+RESOURCES = ['core', 'module']
 
 LEVELS = OrderedDict([('debug', logging.DEBUG),
                       ('info', logging.INFO),
@@ -60,6 +60,47 @@ def build(args):
     execute("gsl -a -script:%s/share/4i/script.gsl %s" % \
             (os.environ['FORGEIT_PREFIX'], args.project_xml),
             piped=False)
+
+def create(args):
+    logger.debug('create')
+
+    print('Creating %s resource...' % args.resource)
+    print('-'*(80+1))
+    print('%60s %20s' % (args.name, args.branch))
+    sys.stdout.flush()
+    registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
+    if not registry_uri:
+        print('Registry URI not available.')
+        sys.exit(-1)
+    uri = '%s/%s' % (registry_uri, args.name)
+    logger.debug(uri)
+    if 'file://' in uri:
+        uri_dst = '%s.git' % uri.replace('file://', '')
+        if os.path.isdir(uri_dst):
+            logger.error('remote %s %s already exists.', args.name, args.resource)
+        else:
+            out, err = execute('git init --bare %s' % uri_dst)
+    dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                           args.resource, args.name, args.branch)
+    logger.debug(dst)
+    out, err = execute('git clone -q %s %s' % (uri, dst))
+    if 'already exists' in err:
+        logger.error('%s (%s) %s already exists.', args.name, args.branch, args.resource)
+    if 'Could not read from remote repository' in err:
+        logger.error('%s (%s) %s failed to be retrieved.', args.name, args.branch, args.resource)
+    if 'not found' in err:
+        logger.error('%s (%s) %s is not found.', args.name, args.branch, args.resource)
+    if 'empty repository' in err:
+        # out, err = execute('git -C %s commit -q --allow-empty -m "+init"' % dst)
+        with open('%s/%s.xml' % (dst, args.resource), 'w') as f:
+            f.write("""\
+<?xml version="1.0"?>
+<{2} name="{0}" branch="{1}">
+</{2}>\
+""".format(args.name, args.branch, args.resource))
+        out, err = execute('git -C %s add %s.xml' % (dst, args.resource))
+        out, err = execute('git -C %s commit -q -m "+init"' % dst)
+        out, err = execute('git -C %s push -q' % dst)
 
 def _list(args):
     logger.debug('_list')
@@ -164,7 +205,16 @@ if __name__ == '__main__':
 
     sp = subparsers.add_parser('list', help='List the retrieved resources.', **common_options)
     sp.set_defaults(func=_list)
+    
+    sp = subparsers.add_parser('clean', help='Clean up the retrieved resources.', **common_options)
+    sp.set_defaults(func=clean)
 
+    sp = subparsers.add_parser('create', help='Create a new resource.', **common_options)
+    sp.add_argument('name', help='Name of the resource to create.')
+    sp.add_argument('branch', nargs='?', help='Branch of the resource to create.', default='master')
+    sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to create.', default='module')
+    sp.set_defaults(func=create)
+    
     sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
     sp.add_argument('name', nargs='?', help='Name of the specific resource to update.')
     sp.add_argument('branch', nargs='?', help='Branch of the resource to update.')
@@ -192,9 +242,6 @@ if __name__ == '__main__':
     sp.add_argument('command', nargs='+', help='The command line to execute.')
     sp.set_defaults(func=command)
     
-    sp = subparsers.add_parser('clean', help='Clean up the retrieved resources.', **common_options)
-    sp.set_defaults(func=clean)
-
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
