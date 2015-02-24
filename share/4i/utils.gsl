@@ -296,6 +296,19 @@ function load_core_dependencies(ctx)
   endfor
 endfunction
 
+function cleanup(ctx)
+  my.ctx ?= root
+  if defined(my.ctx.origin)
+    delete my.ctx
+  endif
+  for my.ctx. as item
+    if class(item) = "XML value"
+      next
+    endif
+    cleanup(item)
+  endfor
+endfunction
+
 # check and load protocol
 function check_load_protocol
   debug('check_load_protocol')
@@ -307,14 +320,29 @@ function check_load_protocol
     my.count += 1
   endwhile
 
-  protocol__combine(root->forgeit)
+  protocol__add(root->forgeit)
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
+      debug('add $(i.name:) $(r.name:) protocol')
+      protocol__add(i)
+    endfor
+  endfor
 
+  protocol__virtual(root->forgeit)
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
+      debug('virtual $(i.name:) $(r.name:) protocol')
+      protocol__virtual(i)
+    endfor
+  endfor
+
+  # error('STOP')
+
+  protocol__combine(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i
       debug('combine $(i.name:) $(r.name:) protocol')
-      directory.setcwd(get_resource_path(i))
       protocol__combine(i)
-      directory.setcwd(global.forgeit_path)
     endfor
   endfor
 
@@ -393,6 +421,8 @@ endfunction
 
 function ready
   root.save('$(build_path:)/root.xml')
+  cleanup()
+  root.save('$(build_path:)/root_clean.xml')
 
   log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
   log("$("bootstrap"%10s): [4i bootstrap $(project_name:)]")
