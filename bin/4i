@@ -114,14 +114,24 @@ def _list(args):
     logger.debug('_list')
 
     for resource in RESOURCES:
-        dashes = (60+20+1)*'-'
-        print('%60s' % resource.upper())
+        dashes = (40+20+1+20+1)*'-'
+        print('%40s' % resource.upper())
         print(dashes)
-        print('%60s %20s' % ('Name', 'Branch'))
+        print('%40s %20s %20s' % ('Name', 'Branch', 'Status'))
         print(dashes)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in listdir(path):
-            print('%60s %20s' % (name, branch))
+            status = 'ok'
+            out, err = execute('git -C %s/%s_%s status' % (path, name, branch))
+            if 'Changes not staged for commit' in out:
+                status = 'uncommitted'
+            elif 'Changes to be committed' in out:
+                status = 'uncommitted'
+            elif 'Untracked files' in out:
+                status = 'untracked'
+            elif 'Your branch is ahead' in out:
+                status = 'unpushed'
+            print('%40s %20s %20s' % (name, branch, status))
         print('')
 
 def update_item(resource, name, branch):
