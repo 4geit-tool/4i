@@ -98,7 +98,15 @@ def create(args):
 <{2} name="{0}" branch="{1}">
 </{2}>\
 """.format(args.name, args.branch, args.resource))
-        out, err = execute('git -C %s add %s.xml' % (dst, args.resource))
+        with open('%s/.gitignore' % dst, 'w') as f:
+            f.write("""\
+build
+.cache
+root.xml
+deprecated
+releases\
+""")
+        out, err = execute('git -C %s add %s.xml .gitignore' % (dst, args.resource))
         out, err = execute('git -C %s commit -q -m "+init"' % dst)
         out, err = execute('git -C %s push -q' % dst)
 
