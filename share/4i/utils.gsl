@@ -142,6 +142,9 @@ function test_project
       m.required_branch='master'
     endnew
   endif
+  directory.create(global.build_path)
+  directory.create(global.cache_path)
+  directory.create(global.debug_path)
   directory.setcwd(global.forgeit_path)
   convert_version_to_branch(root->project)
 endfunction
@@ -315,6 +318,34 @@ function cleanup(ctx)
   endfor
 endfunction
 
+function cleanup_protocol_node(ctx)
+  my.ctx ?= root
+  for my.ctx.protocol_node as pn
+    delete pn
+  endfor
+  for my.ctx. as item
+    if class(item) = "XML value"
+      next
+    endif
+    cleanup_protocol_node(item)
+  endfor
+endfunction
+
+function cleanup_resource_less(ctx)
+  my.ctx ?= root
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
+      delete i
+    endfor
+  endfor
+  for my.ctx. as item
+    if class(item) = "XML value"
+      next
+    endif
+    cleanup_resource_less(item)
+  endfor
+endfunction
+
 # check and load protocol
 function check_load_protocol
   debug('check_load_protocol')
@@ -427,11 +458,25 @@ function print_variables
   log("---")
 endfunction
 
-function ready
-  root.save('$(build_path:)/root.xml')
+function save_debug
+  root.save('$(debug_path:)/root.xml')
+  project.save('$(debug_path:)/project.xml')
+  
   cleanup()
-  root.save('$(build_path:)/root_clean.xml')
+  root.save('$(debug_path:)/root_clean.xml')
+  project.save('$(debug_path:)/project_clean.xml')
+  
+  cleanup_protocol_node()
+  root.save('$(debug_path:)/root_protocol_clean.xml')
+  project.save('$(debug_path:)/project_protocol_clean.xml')
 
+  cleanup_resource_less()
+  root.save('$(debug_path:)/root_resource_less.xml')
+  project.save('$(debug_path:)/project_resource_less.xml')
+endfunction
+
+function ready
+  save_debug()
   log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
   log("$("bootstrap"%10s): [4i bootstrap $(project_name:)]")
   log("$("run"%10s): [4i run $(project_name:)]")

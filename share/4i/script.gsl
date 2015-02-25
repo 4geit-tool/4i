@@ -16,6 +16,7 @@ function set_variables
   global.project_name = project.name?""
   global.build_path = directory.resolve("$(global.project_path:)build")
   global.cache_path = directory.resolve("$(global.project_path:)build/.cache")
+  global.debug_path = directory.resolve("$(global.project_path:)build/.debug")
 endfunction
 
 configure()
