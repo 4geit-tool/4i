@@ -59,13 +59,6 @@
     </node>
     <node name="todo" number="*"/>
     <node name="bug" number="*"/>
-    <node name="require" number="*">
-      <attribute name="env"/>
-      <attribute name="dev"/>
-      <attribute name="name" required="True"/>
-      <attribute name="version"/>
-      <attribute name="variable"/>
-    </node> <!-- !require -->
     <node name="core" number="*">
       <attribute name="name" required="True"/>
       <attribute name="required_branch" required="True"/>
@@ -84,29 +77,28 @@
       <attribute name="version"/>
       <node ref=":todo"/>
       <node ref=":bug"/>
-      <node ref=":require"/>
       <node ref=":node"/>
     </node>
-    <node name="extension" number="*">
-      <attribute name="name" required="True"/>
-      <attribute name="required_branch" required="True"/>
-      <attribute name="branch" required="True"/>
-      <attribute name="required_version"/>
-      <attribute name="version"/>
-      <node name="compatible">
-	<node name="module" number="*">
-	  <attribute name="name" required="True"/>
-	  <attribute name="required_branch"/>
-	  <attribute name="required_version"/>
-	</node> <!-- !module -->
-      </node> <!-- !compatible -->
-      <node name="urls"/>
-      <node name="views"/>
-      <node name="build"/>
-      <node ref=":todo"/>
-      <node ref=":bug"/>
-      <node ref=":require"/>
-      <node ref=":node"/>
-    </node>
+    <!-- <node name="extension" number="*"> -->
+    <!--   <attribute name="name" required="True"/> -->
+    <!--   <attribute name="required_branch" required="True"/> -->
+    <!--   <attribute name="branch" required="True"/> -->
+    <!--   <attribute name="required_version"/> -->
+    <!--   <attribute name="version"/> -->
+    <!--   <node name="compatible"> -->
+    <!-- 	<node name="module" number="*"> -->
+    <!-- 	  <attribute name="name" required="True"/> -->
+    <!-- 	  <attribute name="required_branch"/> -->
+    <!-- 	  <attribute name="required_version"/> -->
+    <!-- 	</node> -->
+    <!--   </node> -->
+    <!--   <node name="urls"/> -->
+    <!--   <node name="views"/> -->
+    <!--   <node name="build"/> -->
+    <!--   <node ref=":todo"/> -->
+    <!--   <node ref=":bug"/> -->
+    <!--   <node ref=":require"/> -->
+    <!--   <node ref=":node"/> -->
+    <!-- </node> -->
   </node>
 </forgeit>

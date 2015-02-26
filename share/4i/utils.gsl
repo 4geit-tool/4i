@@ -365,6 +365,14 @@ function check_load_protocol
     endfor
   endfor
 
+  protocol__load_pre_combine(root->forgeit)
+  for root->forgeit.resource as r
+    for project.$(r.name) as i
+      debug('load_pre_combine $(i.name:) $(r.name:) protocol')
+      protocol__load_pre_combine(i)
+    endfor
+  endfor
+
   protocol__virtual(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i
