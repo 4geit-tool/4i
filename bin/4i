@@ -4,7 +4,7 @@ import argparse, subprocess, sys, os, shutil, logging
 from collections import OrderedDict
 
 VERSION = "master"
-RESOURCES = ['core', 'module', 'project']
+RESOURCES = ['tool', 'core', 'module', 'project']
 
 LEVELS = OrderedDict([('debug', logging.DEBUG),
                       ('info', logging.INFO),
