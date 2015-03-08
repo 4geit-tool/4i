@@ -87,7 +87,7 @@ function get_resource_path(item)
   if !defined(my.item.required_branch)
     error('$(my.item.name:) $(name(my.item):) does not define a required_branch attribute.')
   endif
-  return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_$(my.item.required_branch:)"
+  return "$(global.resource_prefix:)/$(name(my.item):)/$(my.item.name:)_$(my.item.required_branch:)/"
 endfunction
 
 # convert required_version to required_branch
@@ -231,7 +231,7 @@ function load_xml_dependencies
   debug('load_xml_dependencies')
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.branch)
-      my.xml_filename = "$(get_resource_path(i):)/$(r.name:).xml"
+      my.xml_filename = "$(get_resource_path(i):)$(r.name:).xml"
       debug(my.xml_filename)
       if file.exists(my.xml_filename)
         my.tmp = XML.new()
@@ -299,7 +299,7 @@ function load_core_dependencies(ctx)
     for my.ctx.core as c2 where c1.name = c2.name & c1.branch = c2.required_branch
       log("Loading $(c1.name:) core ($(c1.branch:))")
       directory.setcwd(get_resource_path(c1))
-      load_file("$(get_resource_path(c1):)/core.gsl")
+      load_file("$(get_resource_path(c1):)core.gsl")
       directory.setcwd(global.forgeit_path)
     endfor
   endfor
@@ -432,8 +432,8 @@ function load_module_dependencies
     load_file("utils.gsl")
     load_xml("abstractor.xml")
     load_file("script.gsl")
-    load_file("build__sh.gsl")
-    load_file("run__sh.gsl")
+    # load_file("build__sh.gsl")
+    # load_file("run__sh.gsl")
     abstractor__create_dirs(root->abstractor, global.cm_build_path)
     abstractor__create_files(root->abstractor, global.cm_build_path)
     if defined(root->abstractor)
