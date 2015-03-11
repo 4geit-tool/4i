@@ -1,3 +1,10 @@
+# 4i
+
+Model-Oriented Programming and Meta-Programming Orchestration Tool
+
+## Big picture
+
+```
    /------------\
    |CORE LIBRARY|
    \------------/
@@ -13,6 +20,9 @@
    /------------\
    |HOSTING APPS| (orchestration)
    \------------/
+```
+
+## Todo
 
 * 4i-login
 * 4i-core-push
