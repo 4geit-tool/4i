@@ -359,7 +359,7 @@ function check_load_protocol
 
   protocol__add(root->forgeit)
   for root->forgeit.resource as r
-    for project.$(r.name) as i
+    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
       debug('add $(i.name:) $(r.name:) protocol')
       protocol__add(i)
     endfor
@@ -367,7 +367,7 @@ function check_load_protocol
 
   protocol__load_pre_combine(root->forgeit)
   for root->forgeit.resource as r
-    for project.$(r.name) as i
+    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
       debug('load_pre_combine $(i.name:) $(r.name:) protocol')
       protocol__load_pre_combine(i)
     endfor
@@ -375,7 +375,7 @@ function check_load_protocol
 
   protocol__virtual(root->forgeit)
   for root->forgeit.resource as r
-    for project.$(r.name) as i
+    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
       debug('virtual $(i.name:) $(r.name:) protocol')
       protocol__virtual(i)
     endfor
@@ -385,7 +385,7 @@ function check_load_protocol
 
   protocol__combine(root->forgeit)
   for root->forgeit.resource as r
-    for project.$(r.name) as i
+    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
       debug('combine $(i.name:) $(r.name:) protocol')
       protocol__combine(i)
     endfor
@@ -401,7 +401,7 @@ function load_module_dependencies
 
   protocol__load_pre()
 
-  for project.module
+  for project.module where !defined(load) | (defined(load) & load = "True")
     log("Pre-loading $(module.name:) module ($(module.branch:))")
     global.cm_build_path = global.build_path
     global.cm_cache_path = global.cache_path
@@ -420,7 +420,7 @@ function load_module_dependencies
   protocol__load_post()
   global.debug = 0
 
-  for project.module
+  for project.module where !defined(load) | (defined(load) & load = "True")
     log("Post-loading $(module.name:) module ($(module.branch:))")
     global.cm_build_path = global.build_path
     global.cm_cache_path = global.cache_path

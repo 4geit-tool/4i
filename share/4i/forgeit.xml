@@ -33,6 +33,7 @@
   <todo>create core library</todo>
   <todo>push/pull core library</todo>
   <todo>gitify output</todo>
+  <todo>makes xml 4i(onic), removes every redundant features</todo>
 
   <bug>recusive call of run.sh if bad module name</bug>
 
@@ -65,6 +66,7 @@
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
+      <attribute name="load" type="boolean" default="True"/>
       <node ref=":todo"/>
       <node ref=":bug"/>
       <node ref=":node"/>
@@ -75,30 +77,10 @@
       <attribute name="branch" required="True"/>
       <attribute name="required_version"/>
       <attribute name="version"/>
+      <attribute name="load" type="boolean" default="True"/>
       <node ref=":todo"/>
       <node ref=":bug"/>
       <node ref=":node"/>
     </node>
-    <!-- <node name="extension" number="*"> -->
-    <!--   <attribute name="name" required="True"/> -->
-    <!--   <attribute name="required_branch" required="True"/> -->
-    <!--   <attribute name="branch" required="True"/> -->
-    <!--   <attribute name="required_version"/> -->
-    <!--   <attribute name="version"/> -->
-    <!--   <node name="compatible"> -->
-    <!-- 	<node name="module" number="*"> -->
-    <!-- 	  <attribute name="name" required="True"/> -->
-    <!-- 	  <attribute name="required_branch"/> -->
-    <!-- 	  <attribute name="required_version"/> -->
-    <!-- 	</node> -->
-    <!--   </node> -->
-    <!--   <node name="urls"/> -->
-    <!--   <node name="views"/> -->
-    <!--   <node name="build"/> -->
-    <!--   <node ref=":todo"/> -->
-    <!--   <node ref=":bug"/> -->
-    <!--   <node ref=":require"/> -->
-    <!--   <node ref=":node"/> -->
-    <!-- </node> -->
   </node>
 </forgeit>
