@@ -25,7 +25,7 @@ Coming soon...
 If you wish to participate/debate on 4i, you can:
 
 * join the discussion group: https://groups.google.com/forum/?hl=fr#!forum/4geit-4i
-* contact me directly at caner@candan.fr
+* contact me directly at caner@4ge.it
 
 ## Resources
 
