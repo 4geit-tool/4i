@@ -1,4 +1,4 @@
-# 4i
+![Build Status](share/4i/logo.png)
 
 Model-Oriented Programming and Meta-Programming Orchestration Tool
 
