@@ -4,7 +4,7 @@
 
 4i is a **Model-Oriented Programming** and **Meta-Programming** orchestration tool, you can use it to create models and generate codes. It makes possible for programmers to build there own modules from-scratch or just extend some existing ones.
 
-## Example
+## Hello World
 
 Here is the common ["hello world" example](https://github.com/4geit-project/hello) in action. It's basically based on the module [4i.language.python.hello](https://github.com/4geit-module/4i.language.python.hello) which extends the module [4i.language.python](https://github.com/4geit-module/4i.language.python) which extends the module [4i.language](https://github.com/4geit-module/4i.language) which extends the root module [4i](https://github.com/4geit-module/4i).
 
