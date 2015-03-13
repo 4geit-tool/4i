@@ -8,7 +8,7 @@
 
 Here is the common ["hello world" example](https://github.com/4geit-project/hello) in action. It's basically based on the module [4i.language.python.hello](https://github.com/4geit-module/4i.language.python.hello) which extends the module [4i.language.python](https://github.com/4geit-module/4i.language.python) which extends the module [4i.language](https://github.com/4geit-module/4i.language) which extends the root module [4i](https://github.com/4geit-module/4i).
 
-[An asciicast demo](https://asciinema.org/a/17555) is available to quickly show how the hello world project is build with 4i.
+An [asciicast demo](https://asciinema.org/a/17555) is available to quickly show how the hello world project is build with 4i.
 
 ## Development state
 
@@ -17,8 +17,10 @@ Software is still under development but it is already used internally. An active
 However it is hoped to build a module hosting platform in a near future according to the following roadmap:
 
 1. Several primitive modules will be released such as programming languages (c++, python, html, ...) easier and high and low level development framework (django, flask, boost, ...).
-2. A module hosting platform that will enable users to pull-push modules, to extend modules based on other modules and share them with others.
-3. A project hosting platform to assemble modules, host projects and deploy them.
+2. A documention generator for libraries and modules will be integrated to ease the user adaptation.
+3. A test and behavior driven development process will be added as part of the modules protocol.
+4. A module hosting platform that will enable users to pull-push modules, to extend modules based on other modules and share them with others.
+5. A project hosting platform to assemble modules, host projects and deploy them.
 
 ## Going further
 
