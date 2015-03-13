@@ -1,4 +1,4 @@
-![Build Status](share/4i/images/logo.png)
+![4i](share/4i/images/logo.png)
 
 # 4i
 
