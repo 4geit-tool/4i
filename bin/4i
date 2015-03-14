@@ -60,10 +60,13 @@ def get_name_branch(item):
     branch = kwds[-1]
     return name, branch
 
+from operator import itemgetter
+
 def listdir(path):
     try:
-        for item in sorted(os.listdir(path)):
-            yield get_name_branch(item)
+        for name, branch in sorted(map(get_name_branch, os.listdir(path)), key=itemgetter(0)):
+        # for item in sorted(os.listdir(path)):
+            yield name, branch
     except OSError:
         pass
 
@@ -82,8 +85,8 @@ def create(args):
     logger.debug('create')
 
     print('Creating %s resource...' % args.resource)
-    print('-'*(80+1))
-    print('%60s %20s' % (args.name, args.branch))
+    print('-'*80)
+    print('{:<60}{:<20}'.format(args.name, args.branch))
     sys.stdout.flush()
     registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
     if not registry_uri:
@@ -131,10 +134,10 @@ def _list(args):
     logger.debug('_list')
 
     for resource in RESOURCES:
-        dashes = (40+20+1+20+1)*'-'
+        dashes = (40+20+20)*'-'
         print('%40s' % resource.upper())
         print(dashes)
-        print('%40s %20s %20s' % ('Name', 'Branch', 'Status'))
+        print('{:<40}{:<20}{:<20}'.format('Name', 'Branch', 'Status'))
         print(dashes)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in listdir(path):
@@ -148,11 +151,11 @@ def _list(args):
                 status = 'untracked'
             elif 'Your branch is ahead' in out:
                 status = 'unpushed'
-            print('%40s %20s %20s' % (name, branch, status))
+            print('{:<40}{:<20}{:<20}'.format(name, branch, status))
         print('')
 
 def update_item(resource, name, branch):
-    print('%60s %20s' % (name, branch))
+    print('{:<60}{:<20}'.format(name, branch))
     sys.stdout.flush()
     out, err = execute('git -C %s/%s/%s_%s pull -q' % \
                        (os.environ['FORGEIT_RESOURCE_PREFIX'],
@@ -167,7 +170,7 @@ def update(args):
     
     for resource in filter(resource_filter, RESOURCES):
         print('Updating %s resource...' % resource)
-        print('-'*(80+1))
+        print('-'*80)
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in filter(name_branch_filter, listdir(path)):
             update_item(resource, name, branch)
@@ -177,8 +180,8 @@ def retrieve(args):
     logger.debug('retrieve')
 
     print('Retrieving %s resource...' % args.resource)
-    print('-'*(80+1))
-    print('%60s %20s' % (args.name, args.branch))
+    print('-'*80)
+    print('{:<60}{:<20}'.format(args.name, args.branch))
     sys.stdout.flush()
     registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
     if not registry_uri:
