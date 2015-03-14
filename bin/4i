@@ -19,6 +19,7 @@
 
 import argparse, subprocess, sys, os, shutil, logging
 from collections import OrderedDict
+from operator import itemgetter
 
 VERSION = "master"
 RESOURCES = ['tool', 'core', 'module', 'project']
@@ -60,12 +61,9 @@ def get_name_branch(item):
     branch = kwds[-1]
     return name, branch
 
-from operator import itemgetter
-
 def listdir(path):
     try:
         for name, branch in sorted(map(get_name_branch, os.listdir(path)), key=itemgetter(0)):
-        # for item in sorted(os.listdir(path)):
             yield name, branch
     except OSError:
         pass
