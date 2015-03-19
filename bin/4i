@@ -20,6 +20,7 @@
 import argparse, subprocess, sys, os, shutil, logging
 from collections import OrderedDict
 from operator import itemgetter
+import xml.etree.ElementTree as ET
 
 VERSION = "master"
 RESOURCES = ['tool', 'core', 'module', 'project']
@@ -35,12 +36,38 @@ logger = logging.getLogger("4i")
 def is_file_empty(fn):
     return os.stat(fn).st_size == 0
 
-def execute(cmd, piped=True, _input=None):
+def get_name_branch(item):
+    kwds = item.split('_')
+    name = '_'.join(kwds[:-1])
+    branch = kwds[-1]
+    return name, branch
+
+def name_branch_filter((name, branch)):
+    if not args.name: return True
+    if name != args.name: return False
+    if not args.branch: return True
+    if branch != args.branch: return False
+    return True
+
+def resource_filter(resource):
+    return not args.resource or (args.resource and resource == args.resource)
+
+def listdir(path):
+    try:
+        for name, branch in sorted(map(get_name_branch, os.listdir(path)), key=itemgetter(0)):
+            yield name, branch
+    except OSError:
+        pass
+
+def findall(root, tag):
+    return [tuple(x.attrib.values()) for x in root.findall(tag)]
+
+def execute(cmd, piped=True, _input=None, cwd=None):
     logger.debug('execute')
     logger.debug(cmd)
     try:
         if piped:
-            p = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
+            p = subprocess.Popen(cmd.split(), cwd=cwd, stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if _input:
                 out, err = p.communicate(input=_input)
@@ -50,23 +77,10 @@ def execute(cmd, piped=True, _input=None):
             logger.debug(err)
             return out, err
         else:
-            subprocess.call(cmd.split())
+            subprocess.call(cmd.split(), cwd=cwd)
     except KeyboardInterrupt:
-        print('Canceled')
+        print 'Canceled'
         sys.exit(-1)
-
-def get_name_branch(item):
-    kwds = item.split('_')
-    name = '_'.join(kwds[:-1])
-    branch = kwds[-1]
-    return name, branch
-
-def listdir(path):
-    try:
-        for name, branch in sorted(map(get_name_branch, os.listdir(path)), key=itemgetter(0)):
-            yield name, branch
-    except OSError:
-        pass
 
 def build(args):
     logger.debug('build')
@@ -82,13 +96,13 @@ def build(args):
 def create(args):
     logger.debug('create')
 
-    print('Creating %s resource...' % args.resource)
-    print('-'*80)
-    print('{:<60}{:<20}'.format(args.name, args.branch))
+    print 'Creating %s resource...' % args.resource
+    print '-'*80
+    print '{:<60}{:<20}'.format(args.name, args.branch)
     sys.stdout.flush()
     registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
     if not registry_uri:
-        print('Registry URI not available.')
+        print 'Registry URI not available.'
         sys.exit(-1)
     uri = '%s/%s' % (registry_uri, args.name)
     logger.debug(uri)
@@ -132,11 +146,10 @@ def _list(args):
     logger.debug('_list')
 
     for resource in RESOURCES:
-        dashes = (40+20+20)*'-'
-        print('%40s' % resource.upper())
-        print(dashes)
-        print('{:<40}{:<20}{:<20}'.format('Name', 'Branch', 'Status'))
-        print(dashes)
+        print '{:^80}'.format(resource.upper())
+        print 80*'-'
+        print '{:<40}{:<20}{:<20}'.format('Name', 'Branch', 'Status')
+        print 80*'-'
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in listdir(path):
             status = 'ok'
@@ -149,11 +162,11 @@ def _list(args):
                 status = 'untracked'
             elif 'Your branch is ahead' in out:
                 status = 'unpushed'
-            print('{:<40}{:<20}{:<20}'.format(name, branch, status))
-        print('')
+            print '{:<40}{:<20}{:<20}'.format(name, branch, status)
+        print
 
 def update_item(resource, name, branch):
-    print('{:<60}{:<20}'.format(name, branch))
+    print '{:<60}{:<20}'.format(name, branch)
     sys.stdout.flush()
     out, err = execute('git -C %s/%s/%s_%s pull -q' % \
                        (os.environ['FORGEIT_RESOURCE_PREFIX'],
@@ -162,28 +175,24 @@ def update_item(resource, name, branch):
 def update(args):
     logger.debug('update')
     
-    resource_filter = lambda r: not args.resource or (args.resource and r == args.resource)
-    name_branch_filter = lambda (n,b): not args.name or (args.name and n == args.name and \
-                          (not args.branch or (args.branch and b == args.branch)))
-    
     for resource in filter(resource_filter, RESOURCES):
-        print('Updating %s resource...' % resource)
-        print('-'*80)
+        print 'Updating %s resource...' % resource
+        print '-'*80
         path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
         for name, branch in filter(name_branch_filter, listdir(path)):
             update_item(resource, name, branch)
-        print('')
+        print
 
 def retrieve(args):
     logger.debug('retrieve')
 
-    print('Retrieving %s resource...' % args.resource)
-    print('-'*80)
-    print('{:<60}{:<20}'.format(args.name, args.branch))
+    print 'Retrieving %s resource...' % args.resource
+    print '-'*80
+    print '{:<60}{:<20}'.format(args.name, args.branch)
     sys.stdout.flush()
     registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
     if not registry_uri:
-        print('Registry URI not available.')
+        print 'Registry URI not available.'
         sys.exit(-1)
     uri = '%s/%s' % (registry_uri, args.name)
     logger.debug(uri)
@@ -212,7 +221,7 @@ def command(args):
 
 def clean(args):
     logger.debug('clean')
-    print('Cleaning up the building directory...')
+    print 'Cleaning up the building directory...'
     try:
         shutil.rmtree('./build')
     except OSError:
@@ -221,10 +230,69 @@ def clean(args):
 def clean_resources(args):
     logger.debug('clean_resources')
     for resource in RESOURCES:
-        print('Cleaning up %s resources...' % resource)
+        print 'Cleaning up %s resources...' % resource
         try:
             shutil.rmtree('%s/%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource))
         except OSError:
+            pass
+
+def test_list(args):
+    print '{:^80}'.format("%s (%s)" % (resource_name.upper(), resource_branch))
+    print 80*'-'
+    print '{:<20}{:<60}'.format('Name', 'Description')
+    print 80*'-'
+    sys.stdout.flush()
+    for test_name, test_description in test_nodes:
+        print '{:<20}{:<60}'.format(test_name, test_description)
+    print
+
+def test_run(args):
+    print 'Testing %s module (%s)...' % (resource_name, resource_branch)
+    print '-'*80
+    sys.stdout.flush()
+
+    test_filter = lambda (n,d): not args.tests or (args.tests and n in args.tests)
+
+    for test_name, test_description in filter(test_filter, test_nodes):
+        print '{:<75}'.format(test_name),
+
+        test_path = '%s/%s_%s/tests/%s' % (resource_path, resource_name, resource_branch, test_name)
+        build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (resource_name, resource_branch, test_name)
+
+        shutil.rmtree(build_path)
+        shutil.copytree(test_path, build_path)
+
+        out, err = execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=build_path)
+
+        with open('%s/out.txt' % build_path, 'w') as f:
+            f.write(out)
+        with open('%s/err.txt' % build_path, 'w') as f:
+            f.write(err)
+
+        print '{:<5}'.format('ok')
+        sys.stdout.flush()
+    print    
+    
+def test(args):
+    logger.debug('test')
+    
+    resource_path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], 'module')
+    for resource_name, resource_branch in filter(name_branch_filter, listdir(resource_path)):
+        resource_xml_path = "%s/%s_%s/module.xml" % (resource_path, resource_name, resource_branch)
+
+        try:
+            tree = ET.parse(resource_xml_path)
+            root = tree.getroot()
+
+            test_nodes = findall(root, 'test')
+            if not test_nodes:
+                continue
+
+            if args.list:
+                test_list(args, test_nodes, resource_name, resource_branch)
+            else:
+                test_run(args, root, test_nodes, resource_path)
+        except IOError:
             pass
 
 if __name__ == '__main__':
@@ -291,7 +359,14 @@ if __name__ == '__main__':
     sp.add_argument('module', help='Name of the module.')
     sp.add_argument('command', nargs='+', help='The command line to execute.')
     sp.set_defaults(func=command)
-    
+
+    sp = subparsers.add_parser('test', help='Test modules.', **common_options)
+    sp.add_argument('name', nargs='?', help='Name of the module to test.')
+    sp.add_argument('branch', nargs='?', help='Branch of the module to test.', default='master')
+    sp.add_argument('tests', nargs='*', help='Name(s) of the test(s).')
+    sp.add_argument('--list', '-l', action='store_true', default=False, help='Display a list of the available tests.')
+    sp.set_defaults(func=test)
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -299,9 +374,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.levels:
-        print("Here's the verbose levels available:")
+        print "Here's the verbose levels available:"
         for keys in LEVELS.keys():
-            print("\t%s" % keys)
+            print "\t%s" % keys
         sys.exit()
 
     if args.output:
@@ -319,7 +394,7 @@ if __name__ == '__main__':
     logger.debug(args)
 
     if args.version:
-        print(VERSION)
+        print VERSION
         sys.exit()
 
     os.environ['FORGEIT_PREFIX'] = args.prefix if args.prefix else \
