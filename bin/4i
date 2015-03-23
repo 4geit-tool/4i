@@ -33,267 +33,342 @@ LEVELS = OrderedDict([('debug', logging.DEBUG),
 
 logger = logging.getLogger("4i")
 
-def is_file_empty(fn):
-    return os.stat(fn).st_size == 0
+class AbstractCommand(object):
+    def __init__(self, args):
+        self.args = args
+        logger.debug('AbstractCommand')
 
-def get_name_branch(item):
-    kwds = item.split('_')
-    name = '_'.join(kwds[:-1])
-    branch = kwds[-1]
-    return name, branch
+    def __call__(self):
+        logger.debug('AbstractCommand call')
+        self.call()
 
-def name_branch_filter((name, branch)):
-    if not args.name: return True
-    if name != args.name: return False
-    if not args.branch: return True
-    if branch != args.branch: return False
-    return True
+    @staticmethod
+    def is_file_empty(fn):
+        return os.stat(fn).st_size == 0
 
-def resource_filter(resource):
-    return not args.resource or (args.resource and resource == args.resource)
+    @staticmethod
+    def get_name_branch(item):
+        kwds = item.split('_')
+        name = '_'.join(kwds[:-1])
+        branch = kwds[-1]
+        return name, branch
 
-def listdir(path):
-    try:
-        for name, branch in sorted(map(get_name_branch, os.listdir(path)), key=itemgetter(0)):
-            yield name, branch
-    except OSError:
-        pass
+    @staticmethod
+    def name_branch_filter((name, branch)):
+        if not args.name: return True
+        if name != args.name: return False
+        if not args.branch: return True
+        if branch != args.branch: return False
+        return True
 
-def findall(root, tag):
-    return [tuple(x.attrib.values()) for x in root.findall(tag)]
+    @staticmethod
+    def resource_filter(resource):
+        return not args.resource or (args.resource and resource == args.resource)
 
-def execute(cmd, piped=True, _input=None, cwd=None):
-    logger.debug('execute')
-    logger.debug(cmd)
-    try:
-        if piped:
-            p = subprocess.Popen(cmd.split(), cwd=cwd, stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if _input:
-                out, err = p.communicate(input=_input)
+    @staticmethod
+    def listdir(path):
+        try:
+            for name, branch in sorted(map(AbstractCommand.get_name_branch, os.listdir(path)), key=itemgetter(0)):
+                yield name, branch
+        except OSError:
+            pass
+
+    @staticmethod
+    def findall(root, tag):
+        return [tuple(x.attrib.values()) for x in root.findall(tag)]
+
+    @staticmethod
+    def execute(cmd, piped=True, _input=None, cwd=None):
+        logger.debug('execute')
+        logger.debug(cmd)
+        try:
+            if piped:
+                p = subprocess.Popen(cmd.split(), cwd=cwd, stdin=subprocess.PIPE,
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if _input:
+                    out, err = p.communicate(input=_input)
+                else:
+                    out, err = p.communicate()
+                logger.debug(out)
+                logger.debug(err)
+                return out, err
             else:
-                out, err = p.communicate()
-            logger.debug(out)
-            logger.debug(err)
-            return out, err
-        else:
-            subprocess.call(cmd.split(), cwd=cwd)
-    except KeyboardInterrupt:
-        print 'Canceled'
-        sys.exit(-1)
+                subprocess.call(cmd.split(), cwd=cwd)
+        except KeyboardInterrupt:
+            print 'Canceled'
+            sys.exit(-1)
 
-def build(args):
-    logger.debug('build')
+    @staticmethod
+    def rmtree(path):
+        try:
+            shutil.rmtree(path)
+        except OSError:
+            pass
 
-    if is_file_empty(args.project_xml):
-        logger.error('The project file %s is empty.' % args.project_xml)
-        sys.exit(-1)
-    
-    execute("gsl -a -script:%s/share/4i/script.gsl %s" % \
-            (os.environ['FORGEIT_PREFIX'], args.project_xml),
-            piped=False)
+    @staticmethod
+    def copytree(src, dst):
+        try:
+            shutil.copytree(src, dst)
+        except OSError:
+            pass
 
-def create(args):
-    logger.debug('create')
+    @staticmethod
+    def parse(path):
+        try:
+            tree = ET.parse(path)
+            root = tree.getroot()
+            return root
+        except IOError:
+            return None
 
-    print 'Creating %s resource...' % args.resource
-    print '-'*80
-    print '{:<60}{:<20}'.format(args.name, args.branch)
-    sys.stdout.flush()
-    registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
-    if not registry_uri:
-        print 'Registry URI not available.'
-        sys.exit(-1)
-    uri = '%s/%s' % (registry_uri, args.name)
-    logger.debug(uri)
-    if 'file://' in uri:
-        uri_dst = '%s.git' % uri.replace('file://', '')
-        if os.path.isdir(uri_dst):
-            logger.error('remote %s %s already exists.', args.name, args.resource)
-        else:
-            out, err = execute('git init --bare %s' % uri_dst)
-    dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
-                           args.resource, args.name, args.branch)
-    logger.debug(dst)
-    out, err = execute('git clone -q %s %s' % (uri, dst))
-    if 'already exists' in err:
-        logger.error('%s (%s) %s already exists.', args.name, args.branch, args.resource)
-    if 'Could not read from remote repository' in err:
-        logger.error('%s (%s) %s failed to be retrieved.', args.name, args.branch, args.resource)
-    if 'not found' in err:
-        logger.error('%s (%s) %s is not found.', args.name, args.branch, args.resource)
-    if 'empty repository' in err:
-        # out, err = execute('git -C %s commit -q --allow-empty -m "+init"' % dst)
-        with open('%s/%s.xml' % (dst, args.resource), 'w') as f:
-            f.write("""\
+class Build(AbstractCommand):
+    def call(self):
+        logger.debug('build')
+
+        if self.is_file_empty(self.args.project_xml):
+            logger.error('The project file %s is empty.' % self.args.project_xml)
+            sys.exit(-1)
+
+        self.execute("gsl -a -script:%s/share/4i/script.gsl %s" % \
+                     (os.environ['FORGEIT_PREFIX'], self.args.project_xml),
+                     piped=False)
+
+class Create(AbstractCommand):
+    def call(self):
+        logger.debug('create')
+
+        print 'Creating %s resource...' % self.args.resource
+        print '-'*80
+        print '{:<60}{:<20}'.format(self.args.name, self.args.branch)
+        sys.stdout.flush()
+        registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % self.args.resource.upper())
+        if not registry_uri:
+            print 'Registry URI not available.'
+            sys.exit(-1)
+        uri = '%s/%s' % (registry_uri, self.args.name)
+        logger.debug(uri)
+        if 'file://' in uri:
+            uri_dst = '%s.git' % uri.replace('file://', '')
+            if os.path.isdir(uri_dst):
+                logger.error('remote %s %s already exists.', self.args.name, self.args.resource)
+            else:
+                out, err = self.execute('git init --bare %s' % uri_dst)
+        dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                               self.args.resource, self.args.name, self.args.branch)
+        logger.debug(dst)
+        out, err = self.execute('git clone -q %s %s' % (uri, dst))
+        if 'already exists' in err:
+            logger.error('%s (%s) %s already exists.', self.args.name, self.args.branch, self.args.resource)
+        if 'Could not read from remote repository' in err:
+            logger.error('%s (%s) %s failed to be retrieved.', self.args.name, self.args.branch, self.args.resource)
+        if 'not found' in err:
+            logger.error('%s (%s) %s is not found.', self.args.name, self.args.branch, self.args.resource)
+        if 'empty repository' in err:
+            # out, err = execute('git -C %s commit -q --allow-empty -m "+init"' % dst)
+            with open('%s/%s.xml' % (dst, self.args.resource), 'w') as f:
+                f.write("""\
 <?xml version="1.0"?>
 <{2} name="{0}" branch="{1}">
 </{2}>\
-""".format(args.name, args.branch, args.resource))
-        with open('%s/.gitignore' % dst, 'w') as f:
-            f.write("""\
+""".format(self.args.name, self.args.branch, self.args.resource))
+            with open('%s/.gitignore' % dst, 'w') as f:
+                f.write("""\
 build
 .cache
 root.xml
 deprecated
 releases\
 """)
-        out, err = execute('git -C %s add %s.xml .gitignore' % (dst, args.resource))
-        out, err = execute('git -C %s commit -q -m "+init"' % dst)
-        out, err = execute('git -C %s push -q' % dst)
+            out, err = self.execute('git -C %s add %s.xml .gitignore' % (dst, self.args.resource))
+            out, err = self.execute('git -C %s commit -q -m "+init"' % dst)
+            out, err = self.execute('git -C %s push -q' % dst)
 
-def _list(args):
-    logger.debug('_list')
+class List(AbstractCommand):
+    def call(self):
+        logger.debug('list')
 
-    for resource in RESOURCES:
-        print '{:^80}'.format(resource.upper())
-        print 80*'-'
-        print '{:<40}{:<20}{:<20}'.format('Name', 'Branch', 'Status')
-        print 80*'-'
-        path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
-        for name, branch in listdir(path):
-            status = 'ok'
-            out, err = execute('git -C %s/%s_%s status' % (path, name, branch))
-            if 'Changes not staged for commit' in out:
-                status = 'uncommitted'
-            elif 'Changes to be committed' in out:
-                status = 'uncommitted'
-            elif 'Untracked files' in out:
-                status = 'untracked'
-            elif 'Your branch is ahead' in out:
-                status = 'unpushed'
-            print '{:<40}{:<20}{:<20}'.format(name, branch, status)
-        print
+        for resource in RESOURCES:
+            print '{:^80}'.format(resource.upper())
+            print 80*'-'
+            print '{:<40}{:<20}{:<20}'.format('Name', 'Branch', 'Status')
+            print 80*'-'
+            path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
+            for name, branch in self.listdir(path):
+                status = 'ok'
+                out, err = self.execute('git -C %s/%s_%s status' % (path, name, branch))
+                if 'Changes not staged for commit' in out:
+                    status = 'uncommitted'
+                elif 'Changes to be committed' in out:
+                    status = 'uncommitted'
+                elif 'Untracked files' in out:
+                    status = 'untracked'
+                elif 'Your branch is ahead' in out:
+                    status = 'unpushed'
+                print '{:<40}{:<20}{:<20}'.format(name, branch, status)
+            print
 
-def update_item(resource, name, branch):
-    print '{:<60}{:<20}'.format(name, branch)
-    sys.stdout.flush()
-    out, err = execute('git -C %s/%s/%s_%s pull -q' % \
-                       (os.environ['FORGEIT_RESOURCE_PREFIX'],
-                        resource, name, branch))
-
-def update(args):
-    logger.debug('update')
-    
-    for resource in filter(resource_filter, RESOURCES):
-        print 'Updating %s resource...' % resource
-        print '-'*80
-        path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
-        for name, branch in filter(name_branch_filter, listdir(path)):
-            update_item(resource, name, branch)
-        print
-
-def retrieve(args):
-    logger.debug('retrieve')
-
-    print 'Retrieving %s resource...' % args.resource
-    print '-'*80
-    print '{:<60}{:<20}'.format(args.name, args.branch)
-    sys.stdout.flush()
-    registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % args.resource.upper())
-    if not registry_uri:
-        print 'Registry URI not available.'
-        sys.exit(-1)
-    uri = '%s/%s' % (registry_uri, args.name)
-    logger.debug(uri)
-    dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
-                           args.resource, args.name, args.branch)
-    logger.debug(dst)
-    out, err = execute('git clone -q -b %s %s %s' % (args.branch, uri, dst))
-    if 'already exists' in err:
-        logger.error('%s (%s) %s already exists.', args.name, args.branch, args.resource)
-    if 'Could not read from remote repository' in err:
-        logger.error('%s (%s) %s failed to be retrieved.', args.name, args.branch, args.resource)
-    if 'not found' in err:
-        logger.error('%s (%s) %s is not found.', args.name, args.branch, args.resource)
-
-def bootstrap(args):
-    logger.debug('bootstrap')
-    execute('./build/%s/bootstrap.sh' % args.project, piped=False)
-
-def run(args):
-    logger.debug('run')
-    execute('./build/%s/run.sh %s' % (args.project, args.module), piped=False)
-
-def command(args):
-    logger.debug('command')
-    execute('./build/%s/%s_command.sh %s' % (args.project, args.module, ' '.join(args.command)), piped=False)
-
-def clean(args):
-    logger.debug('clean')
-    print 'Cleaning up the building directory...'
-    try:
-        shutil.rmtree('./build')
-    except OSError:
-        pass
-
-def clean_resources(args):
-    logger.debug('clean_resources')
-    for resource in RESOURCES:
-        print 'Cleaning up %s resources...' % resource
-        try:
-            shutil.rmtree('%s/%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource))
-        except OSError:
-            pass
-
-def test_list(args):
-    print '{:^80}'.format("%s (%s)" % (resource_name.upper(), resource_branch))
-    print 80*'-'
-    print '{:<20}{:<60}'.format('Name', 'Description')
-    print 80*'-'
-    sys.stdout.flush()
-    for test_name, test_description in test_nodes:
-        print '{:<20}{:<60}'.format(test_name, test_description)
-    print
-
-def test_run(args):
-    print 'Testing %s module (%s)...' % (resource_name, resource_branch)
-    print '-'*80
-    sys.stdout.flush()
-
-    test_filter = lambda (n,d): not args.tests or (args.tests and n in args.tests)
-
-    for test_name, test_description in filter(test_filter, test_nodes):
-        print '{:<75}'.format(test_name),
-
-        test_path = '%s/%s_%s/tests/%s' % (resource_path, resource_name, resource_branch, test_name)
-        build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (resource_name, resource_branch, test_name)
-
-        shutil.rmtree(build_path)
-        shutil.copytree(test_path, build_path)
-
-        out, err = execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=build_path)
-
-        with open('%s/out.txt' % build_path, 'w') as f:
-            f.write(out)
-        with open('%s/err.txt' % build_path, 'w') as f:
-            f.write(err)
-
-        print '{:<5}'.format('ok')
+class Update(AbstractCommand):
+    def update_item(self, resource, name, branch):
+        print '{:<60}{:<20}'.format(name, branch)
         sys.stdout.flush()
-    print    
-    
-def test(args):
-    logger.debug('test')
-    
-    resource_path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], 'module')
-    for resource_name, resource_branch in filter(name_branch_filter, listdir(resource_path)):
-        resource_xml_path = "%s/%s_%s/module.xml" % (resource_path, resource_name, resource_branch)
+        out, err = self.execute('git -C %s/%s/%s_%s pull -q' % \
+                                (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                                 resource, name, branch))
 
-        try:
-            tree = ET.parse(resource_xml_path)
-            root = tree.getroot()
+    def call(self):
+        logger.debug('update')
 
-            test_nodes = findall(root, 'test')
-            if not test_nodes:
-                continue
+        for resource in filter(self.resource_filter, RESOURCES):
+            print 'Updating %s resource...' % resource
+            print '-'*80
+            path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource)
+            for name, branch in filter(self.name_branch_filter, self.listdir(path)):
+                self.update_item(resource, name, branch)
+            print
 
-            if args.list:
-                test_list(args, test_nodes, resource_name, resource_branch)
-            else:
-                test_run(args, root, test_nodes, resource_path)
-        except IOError:
-            pass
+class Retrieve(AbstractCommand):
+    def call(self):
+        logger.debug('retrieve')
+
+        print 'Retrieving %s resource...' % self.args.resource
+        print '-'*80
+        print '{:<60}{:<20}'.format(self.args.name, self.args.branch)
+        sys.stdout.flush()
+        registry_uri = os.environ.get('FORGEIT_%s_REGISTRY_URI' % self.args.resource.upper())
+        if not registry_uri:
+            print 'Registry URI not available.'
+            sys.exit(-1)
+        uri = '%s/%s' % (registry_uri, self.args.name)
+        logger.debug(uri)
+        dst = '%s/%s/%s_%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'],
+                               self.args.resource, self.args.name, self.args.branch)
+        logger.debug(dst)
+        out, err = AbstractCommand.execute('git clone -q -b %s %s %s' % (self.args.branch, uri, dst))
+        if 'already exists' in err:
+            logger.error('%s (%s) %s already exists.', self.args.name, self.args.branch, self.args.resource)
+        if 'Could not read from remote repository' in err:
+            logger.error('%s (%s) %s failed to be retrieved.', self.args.name, self.args.branch, self.args.resource)
+        if 'not found' in err:
+            logger.error('%s (%s) %s is not found.', self.args.name, self.args.branch, self.args.resource)
+
+class Bootstrap(AbstractCommand):
+    def call(self):
+        logger.debug('bootstrap')
+        self.execute('./build/%s/bootstrap.sh' % self.args.project, piped=False)
+
+class Run(AbstractCommand):
+    def call(self):
+        logger.debug('run')
+        self.execute('./build/%s/run.sh %s' % (self.args.project, self.args.module), piped=False)
+
+class Command(AbstractCommand):
+    def call(self):
+        logger.debug('command')
+        self.execute('./build/%s/%s_command.sh %s' % (self.args.project, self.args.module, ' '.join(self.args.command)), piped=False)
+
+class Clean(AbstractCommand):
+    def call(self):
+        logger.debug('clean')
+        print 'Cleaning up the building directory...'
+        self.rmtree('./build')
+
+class CleanResources(AbstractCommand):
+    def call(self):
+        logger.debug('clean_resources')
+        for resource in RESOURCES:
+            print 'Cleaning up %s resources...' % resource
+            self.rmtree('%s/%s' % (os.environ['FORGEIT_RESOURCE_PREFIX'], resource))
+
+from filecmp import cmp, dircmp
+            
+class Test(AbstractCommand):
+    def list(self):
+        print '{:^80}'.format("%s (%s)" % (self.resource_name.upper(), self.resource_branch))
+        print 80*'-'
+        print '{:<20}{:<60}'.format('Name', 'Description')
+        print 80*'-'
+        sys.stdout.flush()
+        for test_name, test_description in self.test_nodes:
+            print '{:<20}{:<60}'.format(test_name, test_description)
+        print
+
+    def compare_file(self, src, dst):
+        if os.path.isfile(src) and os.path.isfile(dst):
+            return cmp(src, dst)
+        return True
+
+    def compare(self):
+        failed = False
+        files = []
+        
+        if not self.compare_file(self.stdout_path, self.out_path):
+            failed = True
+            files.append('stdout')
+        if not self.compare_file(self.stderr_path, self.err_path):
+            failed = True
+            files.append('stderr')
+
+        def nested_search(dcmp):
+            if dcmp.diff_files:
+                failed = True
+                files += dcmp.diff_files
+            for sub_dcmp in dcmp.subdirs.values():
+                nested_search(sub_dcmp)
+        
+        test_output_path = '%s/output' % self.test_path
+        build_output_path = '%s/build' % self.build_path
+        d = dircmp(test_output_path, build_output_path)
+        nested_search(d)
+
+        print '{:<10}'.format('succeed' if not failed else 'failed')
+        for f in files: print '%s* %s' % (' '*4, f)
+        
+    def run(self):
+        print 'Testing %s module (%s)...' % (self.resource_name, self.resource_branch)
+        print '-'*80
+        sys.stdout.flush()
+
+        test_filter = lambda (n,d): not args.tests or (self.args.tests and n in self.args.tests)
+
+        for test_name, test_description in filter(test_filter, self.test_nodes):
+            print '{:<70}'.format(test_name),
+
+            self.test_path = '%s/%s_%s/tests/%s' % (self.resource_path, self.resource_name, self.resource_branch, test_name)
+            self.build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (self.resource_name, self.resource_branch, test_name)
+
+            self.rmtree(self.build_path)
+            self.copytree(self.test_path, self.build_path)
+
+            out, err = self.execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=self.build_path)
+
+            self.out_path = '%s/out.txt' % self.build_path
+            self.err_path = '%s/out.txt' % self.build_path
+            self.stdout_path = '%s/stdout.txt' % self.build_path
+            self.stderr_path = '%s/stderr.txt' % self.build_path
+            
+            with open(self.out_path, 'w') as f: f.write(out)
+            with open(self.err_path, 'w') as f: f.write(err)
+
+            self.compare()
+            sys.stdout.flush()
+        print
+
+    def call(self):
+        logger.debug('test')
+
+        self.resource_path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], 'module')
+        for self.resource_name, self.resource_branch in filter(self.name_branch_filter, self.listdir(self.resource_path)):
+            self.resource_xml_path = "%s/%s_%s/module.xml" % (self.resource_path, self.resource_name, self.resource_branch)
+            self.root = self.parse(self.resource_xml_path)
+            if self.root is not None:
+                self.test_nodes = self.findall(self.root, 'test')
+                if not self.test_nodes:
+                    continue
+
+                if self.args.list:
+                    self.list()
+                else:
+                    self.run()
 
 if __name__ == '__main__':
     common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
@@ -316,56 +391,56 @@ if __name__ == '__main__':
 
     sp = subparsers.add_parser('build', help='Build a project xml file.', **common_options)
     sp.add_argument('project_xml', nargs='?', help='Project xml file.', default='project.xml')
-    sp.set_defaults(func=build)
+    sp.set_defaults(_class=Build)
 
     sp = subparsers.add_parser('list', help='List the retrieved resources.', **common_options)
-    sp.set_defaults(func=_list)
+    sp.set_defaults(_class=List)
     
     sp = subparsers.add_parser('clean', help='Clean up the building directory.', **common_options)
-    sp.set_defaults(func=clean)
+    sp.set_defaults(_class=Clean)
 
     sp = subparsers.add_parser('clean_resources', help='Clean up the retrieved resources.', **common_options)
-    sp.set_defaults(func=clean_resources)
+    sp.set_defaults(_class=CleanResources)
 
     sp = subparsers.add_parser('create', help='Create a new resource.', **common_options)
     sp.add_argument('name', help='Name of the resource to create.')
     sp.add_argument('branch', nargs='?', help='Branch of the resource to create.', default='master')
     sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to create.', default='module')
-    sp.set_defaults(func=create)
+    sp.set_defaults(_class=Create)
     
     sp = subparsers.add_parser('update', help='Update the retrieved resources.', **common_options)
     sp.add_argument('name', nargs='?', help='Name of the specific resource to update.')
     sp.add_argument('branch', nargs='?', help='Branch of the resource to update.')
     sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to update.')
-    sp.set_defaults(func=update)
+    sp.set_defaults(_class=Update)
 
     sp = subparsers.add_parser('retrieve', help='Retrieve resources.', **common_options)
     sp.add_argument('name', help='Name of the specific resource to retrieve.')
     sp.add_argument('branch', nargs='?', help='Branch of the resource to retrieve.', default='master')
     sp.add_argument('resource', nargs='?', choices=RESOURCES, help='Type of the resource to retrieve.', default='module')
-    sp.set_defaults(func=retrieve)
+    sp.set_defaults(_class=Retrieve)
 
     sp = subparsers.add_parser('bootstrap', help='Use the post-processing bootstrapping script.', **common_options)
     sp.add_argument('project', help='Name of the project.')
-    sp.set_defaults(func=bootstrap)
+    sp.set_defaults(_class=Bootstrap)
 
     sp = subparsers.add_parser('run', help='Use the post-processing running script.', **common_options)
     sp.add_argument('project', help='Name of the project.')
     sp.add_argument('module', help='Name of the module.')
-    sp.set_defaults(func=run)
+    sp.set_defaults(_class=Run)
 
     sp = subparsers.add_parser('command', help='Use the post-processing command script.', **common_options)
     sp.add_argument('project', help='Name of the project.')
     sp.add_argument('module', help='Name of the module.')
     sp.add_argument('command', nargs='+', help='The command line to execute.')
-    sp.set_defaults(func=command)
+    sp.set_defaults(_class=Command)
 
     sp = subparsers.add_parser('test', help='Test modules.', **common_options)
     sp.add_argument('name', nargs='?', help='Name of the module to test.')
     sp.add_argument('branch', nargs='?', help='Branch of the module to test.', default='master')
     sp.add_argument('tests', nargs='*', help='Name(s) of the test(s).')
     sp.add_argument('--list', '-l', action='store_true', default=False, help='Display a list of the available tests.')
-    sp.set_defaults(func=test)
+    sp.set_defaults(_class=Test)
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -402,8 +477,13 @@ if __name__ == '__main__':
     os.environ['FORGEIT_RESOURCE_PREFIX'] = args.resource_prefix if args.resource_prefix else \
                                             "%s/.4geit" % os.environ['HOME']
 
-    if 'func' not in args:
+    if 'func' not in args and '_class' not in args:
         parser.print_help()
         sys.exit()
 
-    args.func(args)
+    if 'func' in args:
+        args.func(args)
+
+    if '_class' in args:
+        cmd = args._class(args)
+        cmd()
