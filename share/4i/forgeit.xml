@@ -46,7 +46,6 @@
   <core name="list" required_branch="master"/>
   <core name="protocol" required_branch="master"/>
   <core name="abstractor" required_branch="master"/>
-  <core name="test" required_branch="master"/>
 
   <todo>pull modules and extensions</todo>
   <todo>push modules and extensions</todo>
