@@ -1,6 +1,30 @@
 <?xml version="1.0"?>
 
-<forgeit>
+<forgeit description="Model-Oriented Programming (MOP) and Meta-Programming (MP) orchestration tool">
+  <bigpicture what="We believe Model-Oriented Programming (MOP) can uplift software developers to a new insight level. We make tools that help developers to intuitively create, extend or just use models."
+	      who="Our first users are development teams that screw a higher scale of efficiency in developing processes. Those who want to abstract just a few or all pieces of their software projects, easy or complex pieces of code and reuse them as long as they want with regards to future projects."
+	      why="As a software development company 4ge.it benefits itself from such a tool and that's why we needed to create this tool in the first place resulting as a robust tool for everyone."/>
+
+  <elevatorpitch for="software developers"
+		 who="screw a higher scale of efficiency in developing processes"
+		 the="4i"
+		 is="a Model-Oriented Programming (MOP) and Meta-Programming (MP) orchestration tool"
+		 that="helps software developers to abstract their pieces of codes by creating, extending or just using models and reuse them as long as they want"
+		 unlike="other solutions that only focus on frontend modeling interfaces"
+		 ourproduct="combines every needed feature to make a MOP system alive from testing and coding to deploying"/>
+  
+  <benefit>Model-Oriented Programming (MOP) and Meta-Programming (MP) orchestration tool</benefit>
+  <benefit>Inheritance Modeling</benefit>
+  <benefit>Prototyping Models</benefit>
+  <benefit>Project-Oriented Programming (POP)</benefit>
+  <benefit>Test-Driven Development (TDD)</benefit>
+
+  <!-- <inscope/> -->
+  <!-- <outscope/> -->
+  <!-- <unresolved/> -->
+
+  <!-- <neighbor name="" role="" reason=""/> -->
+  
   <zen name="Motivation">The motivation comes in setting up long and short term objectives.</zen>
   <zen name="Inception">The first thing you do in your day is to start a first pomodoro to realize whatever you need to do before working.</zen>
   <zen name="Construction">Then begin working with the next pomodoros.</zen>
