@@ -330,28 +330,31 @@ class Test(AbstractCommand):
 
         test_filter = lambda (n,d): not args.tests or (self.args.tests and n in self.args.tests)
 
-        for test_name, test_description in filter(test_filter, self.test_nodes):
-            print '{:<70}'.format(test_name),
+        try:
+            for test_name, test_description in filter(test_filter, self.test_nodes):
+                print '{:<70}'.format(test_name),
 
-            self.test_path = '%s/%s_%s/tests/%s' % (self.resource_path, self.resource_name, self.resource_branch, test_name)
-            self.build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (self.resource_name, self.resource_branch, test_name)
+                self.test_path = '%s/%s_%s/tests/%s' % (self.resource_path, self.resource_name, self.resource_branch, test_name)
+                self.build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (self.resource_name, self.resource_branch, test_name)
 
-            self.rmtree(self.build_path)
-            self.copytree(self.test_path, self.build_path)
+                self.rmtree(self.build_path)
+                self.copytree(self.test_path, self.build_path)
 
-            out, err = self.execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=self.build_path)
+                out, err = self.execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=self.build_path)
 
-            self.out_path = '%s/out.txt' % self.build_path
-            self.err_path = '%s/out.txt' % self.build_path
-            self.stdout_path = '%s/stdout.txt' % self.build_path
-            self.stderr_path = '%s/stderr.txt' % self.build_path
-            
-            with open(self.out_path, 'w') as f: f.write(out)
-            with open(self.err_path, 'w') as f: f.write(err)
+                self.out_path = '%s/out.txt' % self.build_path
+                self.err_path = '%s/out.txt' % self.build_path
+                self.stdout_path = '%s/stdout.txt' % self.build_path
+                self.stderr_path = '%s/stderr.txt' % self.build_path
 
-            self.compare()
-            sys.stdout.flush()
-        print
+                with open(self.out_path, 'w') as f: f.write(out)
+                with open(self.err_path, 'w') as f: f.write(err)
+
+                self.compare()
+                sys.stdout.flush()
+            print
+        except ValueError:
+            logger.error('test node badly formated.')
 
     def call(self):
         logger.debug('test')
