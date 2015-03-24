@@ -317,13 +317,15 @@ class Test(AbstractCommand):
         
         test_output_path = '%s/output' % self.test_path
         build_output_path = '%s/build' % self.build_path
-        try:
-            d = dircmp(test_output_path, build_output_path)
-            nested_search(d)
-        except OSError as e:
-            logger.error('an error occured with the output folder.')
-            logger.debug(e)
-            failed = True
+
+        if os.path.exists(test_output_path) and os.path.exists(build_output_path):
+            try:
+                d = dircmp(test_output_path, build_output_path)
+                nested_search(d)
+            except OSError as e:
+                logger.error('an error occured with the output folder.')
+                logger.debug(e)
+                failed = True
 
         print '{:<10}'.format('succeed' if not failed else 'failed')
         for f in files: print '%s* %s' % (' '*4, f)
