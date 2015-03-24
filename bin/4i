@@ -317,8 +317,13 @@ class Test(AbstractCommand):
         
         test_output_path = '%s/output' % self.test_path
         build_output_path = '%s/build' % self.build_path
-        d = dircmp(test_output_path, build_output_path)
-        nested_search(d)
+        try:
+            d = dircmp(test_output_path, build_output_path)
+            nested_search(d)
+        except OSError as e:
+            logger.error('an error occured with the output folder.')
+            logger.debug(e)
+            failed = True
 
         print '{:<10}'.format('succeed' if not failed else 'failed')
         for f in files: print '%s* %s' % (' '*4, f)
@@ -340,8 +345,13 @@ class Test(AbstractCommand):
                 self.rmtree(self.build_path)
                 self.copytree(self.test_path, self.build_path)
 
-                out, err = self.execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=self.build_path)
-
+                try:
+                    out, err = self.execute("gsl -a -script:%s/share/4i/script.gsl project.xml" % os.environ['FORGEIT_PREFIX'], piped=True, cwd=self.build_path)
+                except OSError as e:
+                    logger.error('an error occured with the test folder.')
+                    logger.debug(e)
+                    continue
+                
                 self.out_path = '%s/out.txt' % self.build_path
                 self.err_path = '%s/out.txt' % self.build_path
                 self.stdout_path = '%s/stdout.txt' % self.build_path
@@ -353,8 +363,9 @@ class Test(AbstractCommand):
                 self.compare()
                 sys.stdout.flush()
             print
-        except ValueError:
+        except ValueError as e:
             logger.error('test node badly formated.')
+            logger.debug(e)
 
     def call(self):
         logger.debug('test')
