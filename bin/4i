@@ -444,6 +444,10 @@ class Test(AbstractCommand):
                 logger.debug(e)
                 self.failed = True
 
+        common_files_len = len(self.common_files)
+        diff_files_len = len(self.diff_files)
+        total_files_len = common_files_len+diff_files_len
+        print '{:<35}'.format('%s/%s' % (common_files_len, total_files_len)),
         print '{:<10}'.format(success('succeed') if not self.failed else error('failed'))
         for f in self.diff_files: logger.debug(error('[diff file] %s' % f))
         for f in self.common_files: logger.debug(success('[common file] %s' % f))
@@ -457,7 +461,7 @@ class Test(AbstractCommand):
 
         try:
             for test_name, test_description in filter(test_filter, self.test_nodes):
-                print '{:<70}'.format(test_name),
+                print '{:<35}'.format(test_name),
 
                 self.test_path = '%s/%s_%s/tests/%s' % (self.resource_path, self.resource_name, self.resource_branch, test_name)
                 self.build_path = '/tmp/.4geit/module/%s_%s/tests/%s' % (self.resource_name, self.resource_branch, test_name)
