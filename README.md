@@ -8,7 +8,7 @@
 
 Here is the common ["hello world" example](https://github.com/4geit-project/hello) in action. It's basically based on the module [4i.language.python.hello](https://github.com/4geit-module/4i.language.python.hello) which extends the module [4i.language.python](https://github.com/4geit-module/4i.language.python) which extends the module [4i.language](https://github.com/4geit-module/4i.language) which extends the root module [4i](https://github.com/4geit-module/4i).
 
-Watch asciicast to quickly show how the hello world project is build with 4i:
+Watch asciicast to quickly see how the hello world project is build with 4i:
 
 [![asciicast](https://asciinema.org/a/17555.png)](https://asciinema.org/a/17555)
 
