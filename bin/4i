@@ -397,7 +397,7 @@ from filecmp import cmp, dircmp
             
 class Test(AbstractCommand):
     def list(self):
-        print '{:^80}'.format("%s (%s)" % (self.resource_name.upper(), self.resource_branch))
+        print '{:^80}'.format("%s (%s)" % (self.resource_name, self.resource_branch))
         print 80*'-'
         print '{:<20}{:<60}'.format('Name', 'Description')
         print 80*'-'
