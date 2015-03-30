@@ -508,6 +508,11 @@ class Test(AbstractCommand):
                 else:
                     self.run()
 
+class Info(AbstractCommand):
+    def call(self):
+        logger.debug('info')
+        print 'version: %s' % success(VERSION)
+
 if __name__ == '__main__':
     common_options = {'formatter_class': argparse.ArgumentDefaultsHelpFormatter}
 
@@ -579,6 +584,9 @@ if __name__ == '__main__':
     sp.add_argument('tests', nargs='*', help='Name(s) of the test(s).')
     sp.add_argument('--list', '-l', action='store_true', default=False, help='Display a list of the available tests.')
     sp.set_defaults(_class=Test)
+
+    sp = subparsers.add_parser('info', help='4i information (version, ...).', **common_options)
+    sp.set_defaults(_class=Info)
 
     if len(sys.argv) == 1:
         parser.print_help()
