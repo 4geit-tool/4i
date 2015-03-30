@@ -364,51 +364,48 @@ function cleanup_resource_less(ctx)
   endfor
 endfunction
 
-# check and load protocol
-function check_load_protocol
-  debug('check_load_protocol')
-
+function process_references
   my.count = 0
   while my.count < 10
     reference__process('node', 'node', root)
     reference__process('group', 'group', root)
     my.count += 1
   endwhile
+endfunction process_references
 
-  protocol__add(root->forgeit)
+function hook_load_protocol(hook)
+  protocol__$(my.hook)(root->forgeit)
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
-      debug('add $(i.name:) $(r.name:) protocol')
-      protocol__add(i)
-    endfor
-  endfor
+      debug('$(my.hook) $(i.name:) $(r.name:) protocol')
+      protocol__$(my.hook)(i)
+    endfor i
+  endfor r
+endfunction hook_load_protocol
 
-  protocol__load_pre_combine(root->forgeit)
+function hook_load_priority_protocol(hook, priority)
+  my.priority ?= "normal"
+  protocol__$(my.hook)(root->forgeit, my.priority)
   for root->forgeit.resource as r
     for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
-      debug('load_pre_combine $(i.name:) $(r.name:) protocol')
-      protocol__load_pre_combine(i)
-    endfor
-  endfor
+      debug('$(my.hook) $(i.name:) $(r.name:) protocol [$(my.priority)]')
+      protocol__$(my.hook)(i, my.priority)
+    endfor i
+  endfor r
+endfunction hook_load_protocol
 
-  protocol__virtual(root->forgeit)
-  for root->forgeit.resource as r
-    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
-      debug('virtual $(i.name:) $(r.name:) protocol')
-      protocol__virtual(i)
-    endfor
-  endfor
-
-  # error('STOP')
-
-  protocol__combine(root->forgeit)
-  for root->forgeit.resource as r
-    for project.$(r.name) as i where !defined(i.load) | (defined(i.load) & i.load = "True")
-      debug('combine $(i.name:) $(r.name:) protocol')
-      protocol__combine(i)
-    endfor
-  endfor
-
+# check and load protocol
+function check_load_protocol
+  debug('check_load_protocol')
+  process_references()
+  hook_load_protocol("add")
+  hook_load_priority_protocol("load_pre_combine", "very_strong")
+  hook_load_priority_protocol("load_pre_combine", "strong")
+  hook_load_priority_protocol("load_pre_combine", "normal")
+  hook_load_priority_protocol("load_pre_combine", "weak")
+  hook_load_priority_protocol("load_pre_combine", "very_weak")
+  hook_load_protocol("virtual")
+  hook_load_protocol("combine")
   protocol__load_pre_check()
   protocol__check()
 endfunction
