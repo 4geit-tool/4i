@@ -447,8 +447,6 @@ function load_module_dependencies
     load_file("utils.gsl")
     load_xml("abstractor.xml")
     load_file("script.gsl")
-    # load_file("build__sh.gsl")
-    # load_file("run__sh.gsl")
     abstractor__create_dirs(root->abstractor, global.cm_build_path)
     abstractor__create_files(root->abstractor, global.cm_build_path)
     if defined(root->abstractor)
@@ -484,11 +482,7 @@ endfunction
 function save_debug
   root.save('$(debug_path:)/root.xml')
   project.save('$(debug_path:)/project.xml')
-  
-  cleanup()
-  root.save('$(debug_path:)/root_clean.xml')
-  project.save('$(debug_path:)/project_clean.xml')
-  
+    
   cleanup_protocol_node()
   root.save('$(debug_path:)/root_protocol_clean.xml')
   project.save('$(debug_path:)/project_protocol_clean.xml')
@@ -496,6 +490,10 @@ function save_debug
   cleanup_resource_less()
   root.save('$(debug_path:)/root_resource_less.xml')
   project.save('$(debug_path:)/project_resource_less.xml')
+
+  cleanup()
+  root.save('$(debug_path:)/root_clean.xml')
+  project.save('$(debug_path:)/project_clean.xml')
 endfunction
 
 function ready
