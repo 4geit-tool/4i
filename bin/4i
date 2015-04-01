@@ -368,12 +368,12 @@ class Retrieve(AbstractCommand):
 class Bootstrap(AbstractCommand):
     def call(self):
         logger.debug('bootstrap')
-        self.execute('./build/%s/bootstrap.sh' % self.args.project, piped=False)
+        self.execute('./build/bootstrap.sh', piped=False)
 
-class Run(AbstractCommand):
+class Launch(AbstractCommand):
     def call(self):
-        logger.debug('run')
-        self.execute('./build/%s/run.sh %s' % (self.args.project, self.args.module), piped=False)
+        logger.debug('launch')
+        self.execute('./build/launch.sh', piped=False)
 
 class Command(AbstractCommand):
     def call(self):
@@ -564,13 +564,10 @@ if __name__ == '__main__':
     sp.set_defaults(_class=Retrieve)
 
     sp = subparsers.add_parser('bootstrap', help='Use the post-processing bootstrapping script.', **common_options)
-    sp.add_argument('project', help='Name of the project.')
     sp.set_defaults(_class=Bootstrap)
 
-    sp = subparsers.add_parser('run', help='Use the post-processing running script.', **common_options)
-    sp.add_argument('project', help='Name of the project.')
-    sp.add_argument('module', help='Name of the module.')
-    sp.set_defaults(_class=Run)
+    sp = subparsers.add_parser('launch', help='Use the post-processing running script.', **common_options)
+    sp.set_defaults(_class=Launch)
 
     sp = subparsers.add_parser('command', help='Use the post-processing command script.', **common_options)
     sp.add_argument('project', help='Name of the project.')
