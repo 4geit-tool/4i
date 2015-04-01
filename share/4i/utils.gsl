@@ -501,9 +501,7 @@ function ready
   log("The project $(global.project_name:) is ready, here are the post-processing scripts that can be called from now:")
   log("$("bootstrap"%10s): [4i bootstrap]")
   log("$("launch"%10s): [4i launch]")
-  for project.module as m
-    log("$(m.name%10s): [4i command $(m.name:)]")
-  endfor
+  log("$("command"%10s): [4i command]")
   log("---")
 endfunction
 
