@@ -378,7 +378,7 @@ class Launch(AbstractCommand):
 class Command(AbstractCommand):
     def call(self):
         logger.debug('command')
-        self.execute('./build/%s/%s_command.sh %s' % (self.args.project, self.args.module, ' '.join(self.args.command)), piped=False)
+        self.execute('./build/%s_command.sh %s' % (self.args.module, ' '.join(self.args.command)), piped=False)
 
 class Clean(AbstractCommand):
     def call(self):
@@ -570,7 +570,6 @@ if __name__ == '__main__':
     sp.set_defaults(_class=Launch)
 
     sp = subparsers.add_parser('command', help='Use the post-processing command script.', **common_options)
-    sp.add_argument('project', help='Name of the project.')
     sp.add_argument('module', help='Name of the module.')
     sp.add_argument('command', nargs='+', help='The command line to execute.')
     sp.set_defaults(_class=Command)
