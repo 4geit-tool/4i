@@ -168,6 +168,12 @@ class AbstractCommand(object):
         return name, branch
 
     @staticmethod
+    def resource_type_filter((resource, callback)):
+        if not args.resource: return True
+        if resource != args.resource: return False
+        return True
+    
+    @staticmethod
     def name_branch_filter((name, branch)):
         if not args.name: return True
         if name != args.name: return False
@@ -223,8 +229,8 @@ class AbstractCommand(object):
     def copytree(src, dst):
         try:
             shutil.copytree(src, dst)
-        except OSError:
-            pass
+        except OSError as e:
+            logger.debug(e)
 
     @staticmethod
     def parse(path):
@@ -283,6 +289,7 @@ class Create(AbstractCommand):
                 f.write("""\
 <?xml version="1.0"?>
 <{2} name="{0}" branch="{1}">
+  <module name="4i" required_branch="{1}"/>
 </{2}>\
 """.format(self.args.name, self.args.branch, self.args.resource))
             with open('%s/.gitignore' % dst, 'w') as f:
@@ -397,7 +404,7 @@ from filecmp import cmp, dircmp
             
 class Test(AbstractCommand):
     def list(self):
-        print '{:^80}'.format("%s (%s)" % (self.resource_name, self.resource_branch))
+        print '{:^70}{:>10}'.format("%s (%s)" % (self.resource_name, self.resource_branch), self.resource_type)
         print 80*'-'
         print '{:<20}{:<60}'.format('Name', 'Description')
         print 80*'-'
@@ -451,8 +458,36 @@ class Test(AbstractCommand):
         print '{:<10}'.format(success('succeed') if not self.failed else error('failed'))
         for f in self.diff_files: logger.debug(error('[diff file] %s' % f))
         for f in self.common_files: logger.debug(success('[common file] %s' % f))
+
+    def run_core(self):
+        print 'Testing %s core (%s)...' % (self.resource_name, self.resource_branch)
+        print '-'*80
+        sys.stdout.flush()
+
+        test_filter = lambda (n,d): not args.tests or (self.args.tests and n in self.args.tests)
+
+        self.core_path = '%s/%s_%s' % (self.resource_path, self.resource_name, self.resource_branch)
+        self.test_path = '%s/%s_%s/tests' % (self.resource_path, self.resource_name, self.resource_branch)
+        self.build_path = '/tmp/.4geit/core/%s_%s/tests' % (self.resource_name, self.resource_branch)
         
-    def run(self):
+        try:
+            for test_name, test_description in filter(test_filter, self.test_nodes):
+                print '{:<35}'.format(test_name),
+
+                try:
+                    out, err = self.execute("gsl -a -script:%s/share/4i/test.gsl core.xml %s %s" % (os.environ['FORGEIT_PREFIX'], self.resource_name, test_name), piped=True, cwd=self.core_path)
+                    print '{:<10}'.format(success('succeed') if 'SUCCESS' in err else error('failed'))
+                    sys.stdout.flush()
+                except OSError as e:
+                    logger.error('an error occured with the test folder.')
+                    logger.debug(e)
+                    continue
+                
+        except ValueError as e:
+            logger.error('test node badly formated.')
+            logger.debug(e)
+                
+    def run_module(self):
         print 'Testing %s module (%s)...' % (self.resource_name, self.resource_branch)
         print '-'*80
         sys.stdout.flush()
@@ -490,23 +525,27 @@ class Test(AbstractCommand):
         except ValueError as e:
             logger.error('test node badly formated.')
             logger.debug(e)
-
+            
     def call(self):
         logger.debug('test')
 
-        self.resource_path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], 'module')
-        for self.resource_name, self.resource_branch in filter(self.name_branch_filter, self.listdir(self.resource_path)):
-            self.resource_xml_path = "%s/%s_%s/module.xml" % (self.resource_path, self.resource_name, self.resource_branch)
-            self.root = self.parse(self.resource_xml_path)
-            if self.root is not None:
-                self.test_nodes = self.findall(self.root, 'test')
-                if not self.test_nodes:
-                    continue
+        for self.resource_type, self.resource_cb in \
+            filter(self.resource_type_filter,
+                   [('core', self.run_core),
+                    ('module', self.run_module)]):
+            self.resource_path = "%s/%s" % (os.environ['FORGEIT_RESOURCE_PREFIX'], self.resource_type)
+            for self.resource_name, self.resource_branch in filter(self.name_branch_filter, self.listdir(self.resource_path)):
+                self.resource_xml_path = "%s/%s_%s/%s.xml" % (self.resource_path, self.resource_name, self.resource_branch, self.resource_type)
+                self.root = self.parse(self.resource_xml_path)
+                if self.root is not None:
+                    self.test_nodes = self.findall(self.root, 'test')
+                    if not self.test_nodes:
+                        continue
 
-                if self.args.list:
-                    self.list()
-                else:
-                    self.run()
+                    if self.args.list:
+                        self.list()
+                    else:
+                        self.resource_cb()
 
 class Info(AbstractCommand):
     def call(self):
@@ -574,6 +613,7 @@ if __name__ == '__main__':
     sp.set_defaults(_class=Command)
 
     sp = subparsers.add_parser('test', help='Test modules.', **common_options)
+    sp.add_argument('resource', nargs='?', help='Type of the resource to test.', choices=['core', 'module'])
     sp.add_argument('name', nargs='?', help='Name of the module to test.')
     sp.add_argument('branch', nargs='?', help='Branch of the module to test.', default='master')
     sp.add_argument('tests', nargs='*', help='Name(s) of the test(s).')
