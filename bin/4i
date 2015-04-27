@@ -472,7 +472,7 @@ class Test(AbstractCommand):
         
         try:
             for test_name, test_description in filter(test_filter, self.test_nodes):
-                print '{:<35}'.format(test_name),
+                print '{:<71}'.format(test_name),
 
                 try:
                     out, err = self.execute("gsl -a -script:%s/share/4i/test.gsl core.xml %s %s" % (os.environ['FORGEIT_PREFIX'], self.resource_name, test_name), piped=True, cwd=self.core_path)
@@ -482,7 +482,7 @@ class Test(AbstractCommand):
                     logger.error('an error occured with the test folder.')
                     logger.debug(e)
                     continue
-                
+            print
         except ValueError as e:
             logger.error('test node badly formated.')
             logger.debug(e)
