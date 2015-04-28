@@ -482,7 +482,7 @@ endfunction
 function save_debug
   root.save('$(debug_path:)/root.xml')
   project.save('$(debug_path:)/project.xml')
-    
+
   cleanup_protocol_node()
   root.save('$(debug_path:)/root_protocol_clean.xml')
   project.save('$(debug_path:)/project_protocol_clean.xml')

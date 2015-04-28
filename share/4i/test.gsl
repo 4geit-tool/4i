@@ -19,6 +19,7 @@
 
 define ERROR = "ERROR"
 define SUCCESS = "SUCCESS"
+define global.logcnt = "test][$(switches.arg1:)][$(switches.arg2:)"
 
 function load_cores
   for core.core as c
